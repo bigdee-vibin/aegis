@@ -1,0 +1,276 @@
+{
+  "corpus_version": "1.0.0",
+  "counts": {
+    "defence": {
+      "labels_by_category": {
+        "defence": 74
+      },
+      "labels_by_subtype": {
+        "defence_context": 4,
+        "infrastructure": 14,
+        "operational_detail": 14,
+        "personnel": 14,
+        "restricted_document": 14,
+        "technology": 14
+      },
+      "negatives": 16,
+      "records": 90,
+      "records_by_expected_action": {
+        "allow": 16,
+        "notify": 4,
+        "review": 70
+      }
+    },
+    "injection": {
+      "labels_by_category": {
+        "prompt_injection": 128
+      },
+      "labels_by_subtype": {
+        "authority_claim": 8,
+        "concealment": 8,
+        "credential_request": 8,
+        "delimiter_escape": 8,
+        "fake_system_message": 8,
+        "instruction_override": 8,
+        "markdown_exfil": 8,
+        "multilingual_override": 24,
+        "policy_override": 8,
+        "role_hijack": 8,
+        "sleeper_instruction": 8,
+        "system_prompt_exfil": 8,
+        "tool_abuse_shell": 8,
+        "tool_exfil": 8
+      },
+      "negatives": 16,
+      "records": 144,
+      "records_by_expected_action": {
+        "allow": 16,
+        "review": 128
+      }
+    },
+    "obfuscation": {
+      "labels_by_category": {
+        "credential_secret": 151,
+        "financial": 8,
+        "identity": 18
+      },
+      "labels_by_subtype": {
+        "anthropic_key": 13,
+        "aws_access_key": 12,
+        "basic_auth_credential": 3,
+        "card_number": 8,
+        "email": 14,
+        "github_token": 41,
+        "gitlab_token": 13,
+        "google_api_key": 11,
+        "google_oauth_secret": 11,
+        "openai_key": 25,
+        "phone": 4,
+        "slack_token": 11,
+        "slack_webhook": 11
+      },
+      "negatives": 8,
+      "records": 155,
+      "records_by_expected_action": {
+        "allow": 8,
+        "block": 123,
+        "notify": 14,
+        "review": 10
+      }
+    },
+    "other_categories": {
+      "labels_by_category": {
+        "confidential": 8,
+        "contextual_identity": 6,
+        "identity": 8,
+        "personal_record": 8,
+        "technical": 20
+      },
+      "labels_by_subtype": {
+        "confidential_marking": 8,
+        "criminal_record": 1,
+        "education_record": 1,
+        "financial_hardship_record": 1,
+        "hr_record": 1,
+        "identifying_combination": 6,
+        "internal_hostname": 10,
+        "medical_record": 2,
+        "mental_health_record": 1,
+        "person_name": 8,
+        "private_ip": 10,
+        "union_health_record": 1
+      },
+      "negatives": 8,
+      "records": 40,
+      "records_by_expected_action": {
+        "allow": 8,
+        "notify": 10,
+        "review": 22
+      }
+    },
+    "pii_negative": {
+      "labels_by_category": {},
+      "labels_by_subtype": {},
+      "negatives": 50,
+      "records": 50,
+      "records_by_expected_action": {
+        "allow": 50
+      }
+    },
+    "pii_positive": {
+      "labels_by_category": {
+        "financial": 54,
+        "identity": 184
+      },
+      "labels_by_subtype": {
+        "address": 24,
+        "br_cpf": 3,
+        "ca_sin": 3,
+        "card_number": 36,
+        "date_of_birth": 10,
+        "email": 40,
+        "es_dni": 3,
+        "fr_insee": 3,
+        "iban": 18,
+        "in_aadhaar": 3,
+        "nl_bsn": 3,
+        "person_name": 24,
+        "phone": 56,
+        "se_personnummer": 3,
+        "sg_nric": 3,
+        "uk_nino": 3,
+        "us_ssn": 3
+      },
+      "negatives": 0,
+      "records": 198,
+      "records_by_expected_action": {
+        "notify": 44,
+        "review": 154
+      }
+    },
+    "preservation": {
+      "labels_by_category": {
+        "financial": 8,
+        "identity": 88
+      },
+      "labels_by_subtype": {
+        "email": 16,
+        "iban": 8,
+        "person_name": 64,
+        "phone": 8
+      },
+      "negatives": 0,
+      "records": 64,
+      "records_by_expected_action": {
+        "review": 64
+      }
+    },
+    "secrets_negative": {
+      "labels_by_category": {
+        "credential_secret": 9
+      },
+      "labels_by_subtype": {
+        "aws_access_key": 5,
+        "aws_secret_key": 1,
+        "stripe_live_key": 3
+      },
+      "negatives": 52,
+      "records": 61,
+      "records_by_expected_action": {
+        "allow": 52,
+        "block": 9
+      }
+    },
+    "secrets_positive": {
+      "labels_by_category": {
+        "credential_secret": 213
+      },
+      "labels_by_subtype": {
+        "anthropic_key": 4,
+        "aws_access_key": 5,
+        "aws_secret_key": 5,
+        "azure_storage_key": 4,
+        "cloudflare_token": 4,
+        "credentialed_connection_string": 10,
+        "databricks_token": 5,
+        "digitalocean_token": 4,
+        "discord_token": 4,
+        "doppler_token": 4,
+        "github_token": 14,
+        "gitlab_token": 5,
+        "google_api_key": 4,
+        "google_oauth_secret": 4,
+        "groq_key": 5,
+        "huggingface_token": 5,
+        "jwt": 6,
+        "linear_key": 5,
+        "mailchimp_key": 5,
+        "mailgun_key": 4,
+        "notion_token": 4,
+        "npm_token": 4,
+        "openai_key": 9,
+        "openrouter_key": 5,
+        "password_assignment": 10,
+        "postman_key": 4,
+        "private_key_block": 17,
+        "pypi_token": 4,
+        "replicate_token": 4,
+        "sendgrid_key": 4,
+        "shopify_token": 4,
+        "slack_token": 5,
+        "slack_webhook": 6,
+        "square_token": 5,
+        "stripe_live_key": 8,
+        "stripe_webhook_secret": 5,
+        "telegram_bot_token": 5,
+        "twilio_api_key": 4
+      },
+      "negatives": 0,
+      "records": 201,
+      "records_by_expected_action": {
+        "block": 201
+      }
+    }
+  },
+  "files": {
+    "data/defence.jsonl": {
+      "records": 90,
+      "sha256": "1eebe815f1cd04cc783adc6ac89f599014f7cca72ff2bf205659c0f6919edfb5"
+    },
+    "data/injection.jsonl": {
+      "records": 144,
+      "sha256": "b97bba41252dd5c61cf8cfb2eafe68be2d74a1498e2f2265766d3bb07d7596ff"
+    },
+    "data/obfuscation.jsonl": {
+      "records": 155,
+      "sha256": "26cfcf035e1dc53eac3d3e98ca9912cffd6cbe6a3e56d1a8269a3fc03a537790"
+    },
+    "data/other_categories.jsonl": {
+      "records": 40,
+      "sha256": "f331684eb7ca0d6e9f09a88caea40543e120b2330c6edec26dddac4764d59f84"
+    },
+    "data/pii_negative.jsonl": {
+      "records": 50,
+      "sha256": "1c648a2c80672b05c097f2a95cacc89aaf7692866ff143db82a7194a687e0193"
+    },
+    "data/pii_positive.jsonl": {
+      "records": 198,
+      "sha256": "6f8fa6c82aa729a4fadf5c182c93e45ea05dcc118deb1ca4f6cfd719dc9484ac"
+    },
+    "data/preservation.jsonl": {
+      "records": 64,
+      "sha256": "f47ac2c725184e2a23de4b984c6b603743d909f1f2851a36b983250b300d68bc"
+    },
+    "data/secrets_negative.jsonl": {
+      "records": 61,
+      "sha256": "a1807bce0cdefd4a6082d4f8c76fb8af13dc0a89d5781e705b95653b6a07dd91"
+    },
+    "data/secrets_positive.jsonl": {
+      "records": 201,
+      "sha256": "1dd1e9771738820e6cfcdf1c2254f227b35ff5eca78aae43825fbe7457fde17d"
+    }
+  },
+  "generator_sources_sha256": "c43f28f1a4aceb189a70e5deb7e787765470584155e33cfddd620b00213dd9dc",
+  "offset_unit": "utf8_bytes_end_exclusive",
+  "seed_prefix": "aegis-s0.4-corpora-v1"
+}
