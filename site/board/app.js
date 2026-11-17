@@ -34,7 +34,7 @@ function shell(inner,route){
  return `<div class="shell"><nav class="side" aria-label="Primary"><div class="brand">${ic('shieldcheck','xl')}<span>Aegis</span></div>${nav}<div class="navgrp">Design board</div>${board}<div class="sidefoot t-meta" style="margin-top:auto;padding:12px 10px">Platform rollout for v1.0 is not confirmed; this design is platform-adaptable.</div></nav>
  <div class="main"><header class="topbar"><h1 class="t-page" id="ttl">${TITLES[route]}</h1><div class="grow"></div>
  <span class="badge b-acc">${ic('lock')}${S.mode.replace('_',' ')}</span><span class="badge b-neu">${ic('layers')}${S.profile}</span>
- <button class="btn ghost icon tip" data-tip="Toggle theme" aria-label="Toggle light or dark theme" data-act="theme">${ic(document.documentElement.dataset.theme=='light'?'moon':'sun')}</button></header>
+ <button class="btn ghost icon tip end" data-tip="Toggle theme" aria-label="Toggle light or dark theme" data-act="theme">${ic(document.documentElement.dataset.theme=='light'?'moon':'sun')}</button></header>
  <main class="page" id="content" tabindex="-1">${inner}</main></div></div>${dialog()}<div class="toasts" role="status" aria-live="polite">${S.toasts.map(t=>`<div class="toast">${ic('circlecheck')}<span>${t}</span></div>`).join('')}</div>`}
 
 /* ---------- Overview ---------- */
@@ -46,40 +46,14 @@ ${[['Mode',S.mode.replace('_',' '),'lock'],['Profile',S.profile,'layers'],['Loca
 <p class="t-sec">${pc?`${blockedCount()} blocked and ${pc-blockedCount()} awaiting your review. Nothing has been sent.`:'Nothing needs your attention.'}</p>
 <div class="row" style="margin-top:16px"><a class="btn primary" href="#review">Open Review Center</a><a class="btn" href="#inspector">Inspect last prompt</a></div></section></div>
 <div class="grid g2"><section class="card"><div class="card-h"><h2 class="t-section">Integration coverage</h2><a href="#integrations" class="t-sec">Manage</a></div><div class="list">
-${[['Chrome extension','ChatGPT, Claude (2 supported sites)','prot'],['OpenAI-compatible gateway','127.0.0.1:8742 · 2 app keys','prot'],['Other AI websites','Unsupported sites are not inspected','none'],['Ollama','Local runtime','prot']].map(([a,b,s])=>`<div class="li"><div class="grow"><div style="font-weight:550">${a}</div><div class="t-meta">${b}</div></div>${st(s)}</div>`).join('')}</div></section>
+${[['Chrome extension','ChatGPT, Claude (2 supported sites)','prot'],['OpenAI-compatible gateway','127.0.0.1:8731 · 2 app keys','prot'],['Other AI websites','Unsupported sites are not inspected','none'],['Ollama','Local runtime','prot']].map(([a,b,s])=>`<div class="li"><div class="grow"><div style="font-weight:550">${a}</div><div class="t-meta">${b}</div></div>${st(s)}</div>`).join('')}</div></section>
 <section class="card"><div class="card-h"><h2 class="t-section">Recent events</h2><a href="#analytics" class="t-sec">All activity</a></div><div class="list">
 ${[['crit','Secret blocked before sending','VS Code assistant · 4 min ago'],['high','Personal details need review','ChatGPT · 11 min ago'],['low','Inspection passed, no findings','Claude · 26 min ago'],['med','Response masked: internal hostname','Gateway · 1 h ago']].map(([s,a,b])=>`<div class="li">${sev(s)}<div class="grow"><div style="font-weight:550">${a}</div><div class="t-meta">${b}</div></div></div>`).join('')}</div></section></div>
 <div class="grid g2"><section class="card"><h2 class="t-section" style="margin-bottom:12px">Privacy activity today</h2><div class="grid g3" style="gap:12px">${[['Inspected','38'],['Transformed','5'],['Blocked','1']].map(([a,b])=>`<div class="pane"><div class="t-page">${b}</div><div class="t-meta">${a}</div></div>`).join('')}</div><p class="t-meta" style="margin-top:10px">Counts only. Prompt content is never stored.</p></section>
 <section class="card"><h2 class="t-section" style="margin-bottom:12px">Quick actions</h2><div class="row wrap"><button class="btn" data-act="dlg:synthetic">${ic('play')}Run protection test</button><a class="btn" href="#router">${ic('route')}Change mode</a><a class="btn" href="#profiles">${ic('layers')}Switch profile</a><a class="btn" href="#extension">${ic('puzzle')}Extension popup</a></div></section></div>`}
 
-/* ---------- Review Center ---------- */
-const seg2=(a,cls)=>a.map(x=>x[1]?`<span class="${x[1]=='ins'?'':x[1]}" ${x[1]=='ins'?'':''}>${x[1]=='ins'?`<ins>${x[0]}</ins>`:`<mark class="hl ${x[1].replace('hl','').trim()}" title="${x[2]||''}" style="color:inherit">${x[0]}</mark>`}</span>`:x[0]).join('');
-const origH=r=>r.orig.map(x=>x[1]?`<mark class="hl ${x[1].replace('hl','').trim()}" style="color:inherit" title="${x[2]||''}">${x[0]}</mark>`:x[0]).join('');
-const propH=r=>(r.edited?`<span>${r.edited}</span>`:r.prop.map(x=>x[1]=='ins'?`<ins>${x[0]}</ins>`:x[0]).join(''));
-function review(){const r=S.reviews[S.sel];const cur=S.reviews.length?r:null;
- const q=S.reviews.map((x,i)=>`<button class="queue-item" data-act="sel:${i}" aria-current="${i==S.sel}"><div class="grow"><div class="row between">${sev(x.sev)}<span class="t-meta mono">${x.id}</span></div><div style="font-weight:550;margin-top:6px">${x.cats[0]}</div><div class="t-meta">${x.app}</div><div style="margin-top:6px">${x.stage==3?badge('ok','check','Sent'):x.stage==-1?badge('neu','x','Rejected'):x.blocked?badge('crit','ban','Blocked'):x.stage==1?badge('acc','check','Transformation approved'):badge('warn','alert','Awaiting review')}</div></div></button>`).join('');
- const empty=S.reviews.every(x=>x.stage==3||x.stage==-1);
- return `${sample()}<div class="split"><section class="card flat" aria-label="Review queue"><div class="card-h"><h2 class="t-section">Queue</h2><span class="t-meta">${pendingCount()} pending</span></div><div class="col" style="gap:4px">${q}</div></section>
- <section class="stack" aria-live="polite">${empty?`<div class="card empty"><div class="ico">${ic('check','lg')}</div><h2 class="t-section">Review queue is empty</h2><p class="t-sec">Nothing is waiting. New prompts that need a decision will appear here.</p></div>`:reviewDetail(r)}</section></div>`}
-function reviewDetail(r){
- const done=r.stage==3||r.stage==-1;
- let flow=`<ol class="row wrap" style="list-style:none;padding:0;margin:0;gap:16px">${['Detected','Transformation approved','Re-inspected','Transmission approved'].map((t,i)=>`<li class="step ${r.stage>i||r.stage==3?'done':r.stage==i?'now':''}"><span class="n">${r.stage>i||r.stage==3?ic('check'):i+1}</span>${t}</li>`).join('')}</ol>`;
- if(r.blocked) return `<div class="alert crit">${ic('octagon','lg')}<div><div class="ttl">Blocked: credential detected</div><p>Policy “Never transmit credentials” is mandatory and cannot be approved from here. Nothing left your device.</p></div></div>
- <div class="card"><div class="card-h"><div><h2 class="t-section">${r.id} · ${r.app}</h2><div class="t-meta">Routing: ${r.model}</div></div>${sev(r.sev)}</div>
- <div class="lbl" style="margin-bottom:6px">What you wrote</div><div class="pane diff">${origH(r)}</div><div class="alert warn" style="margin-top:12px">${ic('alert')}<div><div class="ttl">What to do next</div><p>1. Remove the key from your prompt and describe the error instead.<br>2. If this key was typed anywhere shared, rotate it in your cloud console.<br>3. Use a credential reference (environment variable) in code samples.</p></div></div>
- <div class="row wrap" style="margin-top:16px"><button class="btn primary" data-act="rejectNow">${ic('x')}Cancel request</button><button class="btn" data-act="dlg:why">${ic('info')}View detailed explanation</button><button class="btn" data-act="toast:Open the app and delete the key from your prompt">${ic('pencil')}I'll edit my prompt</button></div></div>`;
- return `<div class="card"><div class="card-h"><div><h2 class="t-section">${r.id} · ${r.app}</h2><div class="t-meta">${r.inbound?'Inbound response':'Outbound prompt'} · routing: ${r.model}</div></div>${sev(r.sev)}</div>
- <div class="row wrap" style="margin-bottom:12px">${r.cats.map(c=>badge('neu','scan',c)).join('')}</div>${flow}</div>
- <div class="cmp"><div class="pane"><div class="row between" style="margin-bottom:8px"><span class="lbl">Original</span><span class="t-meta">${r.inbound?'received':'stays on this device'}</span></div><div class="diff">${origH(r)}</div></div>
- <div class="pane" style="border-color:var(--accent)"><div class="row between" style="margin-bottom:8px"><span class="lbl">Proposed${r.edited?' (edited)':''}</span><span class="t-meta">${r.edited?'re-inspected':'what would be sent'}</span></div>
- ${S.editing?`<label class="sr" for="ed">Edit transformed prompt</label><textarea id="ed" class="input" rows="6">${(r.edited||r.prop.map(x=>x[0]).join('')).replace(/</g,'&lt;')}</textarea>`:`<div class="diff">${propH(r)}</div>`}</div></div>
- <div class="card"><h2 class="t-section" style="margin-bottom:8px">What changed and why</h2><div class="list">${r.why.map(w=>`<div class="li" style="align-items:flex-start"><div style="width:130px;font-weight:550;flex:none">${w[0]}</div><div class="t-sec">${w[1]}</div></div>`).join('')}</div><p class="t-meta" style="margin-top:8px">${ic('info')} ${r.conf} Anonymisation reduces exposure; it does not guarantee that re-identification is impossible.</p></div>
- ${r.stage==2?`<div class="alert ok">${ic('shieldcheck','lg')}<div><div class="ttl">Re-inspection passed</div><p>The transformed text${r.edited?', including your edits,':''} was checked again. No new sensitive content found. It has not been sent.</p></div></div>`:''}
- ${done?`<div class="alert ${r.stage==3?'ok':'info'}">${ic(r.stage==3?'circlecheck':'info','lg')}<div><div class="ttl">${r.stage==3?'Sent after your approval':'Request rejected'}</div><p>${r.stage==3?'Transformed prompt sent. The response will be inspected on return.':'Nothing was sent. You can undo this for 30 seconds.'}</p></div></div>${r.stage==-1?`<button class="btn" data-act="undo">${ic('undo')}Undo reject</button>`:''}`:
- `<div class="card elev"><div class="row wrap between"><div><div class="lbl">Two separate decisions</div><div class="t-sec">Approving a change is not approval to send it.</div></div></div>
- <div class="grid g2" style="margin-top:14px"><div class="stack" style="gap:8px"><div class="t-meta">STEP 1 · TRANSFORM</div><button class="btn primary" data-act="approveT" ${r.stage>=1?'disabled':''}>${ic('check')}${r.stage>=1?'Transformation approved':'Approve transformation'}</button><button class="btn" data-act="${S.editing?'saveEdit':'edit'}" ${r.stage>=1||!r.prop?'disabled':''}>${ic('pencil')}${S.editing?'Save & re-inspect':'Edit transformed content'}</button></div>
- <div class="stack" style="gap:8px"><div class="t-meta">STEP 2 · TRANSMIT</div><button class="btn primary" data-act="approveSend" ${r.stage<2?'disabled aria-describedby="why-dis"':''}>${ic('send')}Approve and send</button><span class="t-meta" id="why-dis">${r.stage<2?'Available after you approve the transformation and re-inspection passes.':'Sends only the transformed text shown above.'}</span></div></div>
- <div class="divider"></div><div class="row wrap"><button class="btn danger" data-act="dlg:reject">${ic('x')}Reject request</button><button class="btn ghost" data-act="dlg:why">${ic('info')}View detailed explanation</button></div></div>`}`}
+/* Review Center lives in review.js (contract v1.x renderer + mock daemon). */
+function review(){return ''}
 
 /* ---------- Security Inspector ---------- */
 function inspector(){const t=tb('insp','Outbound');return `${sample()}
@@ -134,7 +108,7 @@ function integrations(){const lan=S.bind!='127.0.0.1';
  <section class="card"><div class="card-h"><h2 class="t-section">API gateway</h2>${lan?badge('warn','alert','LAN access on'):badge('ok','lock','Localhost only')}</div>
  <div class="grid g2"><div class="stack"><div class="field"><label for="bind">Bind address</label><select id="bind" class="select input mono" data-act="bind"><option value="127.0.0.1" ${!lan?'selected':''}>127.0.0.1 (default)</option><option value="0.0.0.0" ${lan?'selected':''}>0.0.0.0 (LAN, requires authentication)</option></select><span class="help">Network exposure never turns on silently.</span></div>
  ${lan?`<div class="alert warn">${ic('alert')}<div><div class="ttl">LAN access is enabled</div><p>Other devices on your network can reach this gateway. Every request must authenticate with an app key.</p></div></div>`:''}
- <div class="field"><span class="lbl">Endpoints (same policy engine)</span><code>http://${S.bind=='0.0.0.0'?'&lt;this-device&gt;':'127.0.0.1'}:8742/v1/responses</code><code>http://${S.bind=='0.0.0.0'?'&lt;this-device&gt;':'127.0.0.1'}:8742/v1/chat/completions</code></div></div>
+ <div class="field"><span class="lbl">Endpoints (same policy engine)</span><code>http://${S.bind=='0.0.0.0'?'&lt;this-device&gt;':'127.0.0.1'}:8731/v1/responses</code><code>http://${S.bind=='0.0.0.0'?'&lt;this-device&gt;':'127.0.0.1'}:8731/v1/chat/completions</code></div></div>
  <div class="stack"><div class="row between"><span class="lbl">App API keys</span><button class="btn sm" data-act="dlg:newkey">${ic('key')}New key</button></div><div class="list">${S.keys.map((k,i)=>`<div class="li"><div class="grow"><div style="font-weight:550">${k[0]}</div><div class="mono faint">${k[1]}</div><div class="t-meta">Last used ${k[2]}</div></div><button class="btn sm danger" data-act="dlg:revoke:${i}">Revoke</button></div>`).join('')||'<p class="t-sec">No keys.</p>'}</div><p class="t-meta">One key per application. Keys are shown once, then masked.</p></div></div></section>`}
 
 /* ---------- Settings ---------- */
@@ -151,10 +125,11 @@ function settings(){const s=S.setSec;let b='';
 /* ---------- Dialogs ---------- */
 function dialog(){const d=S.dlg;if(!d)return '';let body='';
  const wrap=(t,p,acts)=>`<div class="scrim" data-act="closeDlg"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dt"><h2 id="dt">${t}</h2><div class="t-sec">${p}</div><div class="acts">${acts}</div></div></div>`;
- if(d=='reject')return wrap('Reject this request?','Nothing will be sent. You can undo for 30 seconds.',`<button class="btn" data-act="closeDlg">Keep reviewing</button><button class="btn danger" data-act="rejectNow">Reject request</button>`);
+ if(d=='reject')return wrap('Reject this request?','Nothing will be sent. Rejection is final; there is no undo.',`<button class="btn" data-act="closeDlg">Keep reviewing</button><button class="btn danger" data-act="rejectNow">Reject request</button>`);
  if(d=='why'){const r=S.reviews[S.sel];return wrap('Detailed explanation',`<div class="list">${r.why.map(w=>`<div class="li" style="align-items:flex-start"><b style="width:120px;flex:none;color:var(--text)">${w[0]}</b><span>${w[1]}</span></div>`).join('')}</div>`,`<button class="btn primary" data-act="closeDlg">Close</button>`)}
  if(d=='lan')return wrap('Enable LAN access?','Other devices on your network will be able to reach the Aegis gateway. Each request must carry an app key. Only enable this if you trust the network.',`<button class="btn" data-act="closeDlg">Keep localhost only</button><button class="btn warn" data-act="confirmLan">Enable LAN access</button>`);
  if(d.startsWith('revoke'))return wrap('Revoke this key?','Apps using it will stop working immediately. This cannot be undone; you would need to create a new key.',`<button class="btn" data-act="closeDlg">Cancel</button><button class="btn danger" data-act="confirmRevoke:${d.split(':')[1]}">Revoke key</button>`);
+ if(d=='keyshown')return wrap('Your new app key',`<p>This key is shown once. Copy it into your app now; Aegis keeps only a masked version.</p><div class="row" style="margin-top:12px"><code class="grow" id="nk">${S.newKey||''}</code><button class="btn" data-act="copyKey">${ic('file')}Copy key</button></div>`,`<button class="btn primary" data-act="closeDlg">I have copied it</button>`);
  if(d=='newkey')return wrap('Create app key',`<div class="field" style="margin-top:8px"><label for="kn">Application name</label><input id="kn" class="input" placeholder="e.g. Cursor"></div><p class="help" style="margin-top:8px">The key is shown once. Copy it into your app.</p>`,`<button class="btn" data-act="closeDlg">Cancel</button><button class="btn primary" data-act="addKey">Create key</button>`);
  if(d=='ctx')return wrap(`Activate “${S.prof}” → “${S.prof=='Coding'?'Personal':S.prof}”?`,`<p>Proposed changes before activation:</p><ul style="padding-left:18px;margin:8px 0"><li>Privacy strictness: ${PROF[S.prof][1]}</li><li>Sensitive handling: ${PROF[S.prof][3]}</li><li>Approvals: ${PROF[S.prof][5]}</li></ul>`,`<button class="btn" data-act="closeDlg">Not now</button><button class="btn primary" data-act="activate">Activate profile</button>`);
  if(d=='synthetic')return wrap('Synthetic protection test','Aegis will send a fake prompt containing a fake email and a fake key through the full path locally. Nothing is sent to any provider.',`<button class="btn" data-act="closeDlg">Cancel</button><button class="btn primary" data-act="synthRun">Run test</button>`);
@@ -163,10 +138,17 @@ function dialog(){const d=S.dlg;if(!d)return '';let body='';
 /* ---------- Router ---------- */
 const R={overview,review,inspector,profiles,router,analytics,integrations,settings};
 function render(){const route=(location.hash||'#overview').slice(1);const f=R[route]||(window.EXTRA&&window.EXTRA[route])||overview;const r=R[route]||window.EXTRA&&window.EXTRA[route]?route:'overview';
- const y=scrollY;$('#app').innerHTML=shell(f(),r);scrollTo(0,y);}
+ const ae=document.activeElement;const inDlg=!!(ae&&ae.closest&&ae.closest('.dialog'));const key=ae&&ae.dataset?ae.dataset.act:null;
+ const y=scrollY;$('#app').innerHTML=shell(f(),r);scrollTo(0,y);afterRender(inDlg,key)}
+function afterRender(inDlg,key){const dlg=document.querySelector('.dialog'),sh=document.querySelector('.shell');
+ if(dlg){sh&&sh.setAttribute('inert','');dlg.setAttribute('tabindex','-1');const t=inDlg&&key?dlg.querySelector('[data-act="'+key+'"]:not([disabled])'):null;(t||dlg.querySelector('input:not([disabled]),button:not([disabled])')||dlg).focus();S._wasDlg=true}
+ else if(S._wasDlg){S._wasDlg=false;const o=S.opener&&document.querySelector('[data-act="'+S.opener+'"]');const tgt=o||document.getElementById('content');tgt&&tgt.focus();S.opener=null}
+ else if(key){const t=document.querySelector('[data-act="'+key+'"]');t&&t.focus({preventScroll:true})}}
 addEventListener('hashchange',()=>{S.editing=false;S.dlg=null;render();scrollTo(0,0);$('#content')?.focus()});
 function toast(t){S.toasts.push(t);render();setTimeout(()=>{S.toasts.shift();render()},3200)}
-document.addEventListener('keydown',e=>{if(e.key=='Escape'&&S.dlg){S.dlg=null;render()}});
+document.addEventListener('keydown',e=>{
+ if(e.key=='Escape'&&S.dlg){S.dlg=null;S.ovAck=false;S.newKey=null;render();return}
+ if(e.key=='Tab'&&S.dlg){const d=document.querySelector('.dialog');if(!d)return;const f=[...d.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select,textarea,[tabindex]:not([tabindex="-1"])')];if(!f.length){e.preventDefault();return}const first=f[0],last=f[f.length-1];if(!d.contains(document.activeElement)){first.focus();e.preventDefault()}else if(e.shiftKey&&document.activeElement==first){last.focus();e.preventDefault()}else if(!e.shiftKey&&document.activeElement==last){first.focus();e.preventDefault()}}});
 document.addEventListener('change',e=>{const a=e.target.dataset.act;if(a=='bind'){if(e.target.value!='127.0.0.1'){S.dlg='lan'}else S.bind='127.0.0.1';render()}});
 document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el)return;const a=el.dataset.act;if(el.tagName=='SELECT')return;const [k,...p]=a.split(':');const v=p.join(':');const r=S.reviews[S.sel];
  const go=()=>render();
@@ -176,22 +158,20 @@ document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if
  if(k=='mode'){S.mode=v;return go()}
  if(k=='prof'){S.prof=v;return go()}
  if(k=='set'){S.setSec=v;return go()}
- if(k=='dlg'){S.dlg=v;return go()}
- if(k=='closeDlg'){if(e.target!==el&&el.classList.contains('scrim'))return;S.dlg=null;return go()}
+ if(k=='dlg'){S.opener=el.dataset.act;S.ovAck=false;S.dlg=v;return go()}
+ if(k=='closeDlg'){if(e.target!==el&&el.classList.contains('scrim'))return;S.dlg=null;S.ovAck=false;S.newKey=null;return go()}
  if(k=='ollama'){S.ollama=!S.ollama;return go()}
  if(k=='approveT'){r.stage=1;go();setTimeout(()=>{r.stage=2;go()},700);return}
  if(k=='edit'){S.editing=true;return go()}
  if(k=='saveEdit'){const t=$('#ed').value;r.edited=t.replace(/</g,'&lt;');S.editing=false;r.stage=1;go();setTimeout(()=>{r.stage=2;go()},700);return}
  if(k=='approveSend'){r.stage=3;go();return toast('Sent. Response will be inspected on return.')}
- if(k=='rejectNow'){r.stage=-1;S.dlg=null;go();return toast('Request rejected. Undo available for 30 s.')}
- if(k=='undo'){r.stage=0;return go()}
  if(k=='confirmLan'){S.bind='0.0.0.0';S.dlg=null;return go()}
  if(k=='confirmRevoke'){if(v!='p')S.keys.splice(+v,1);S.dlg=null;go();return toast('Key revoked')}
- if(k=='addKey'){S.keys.push([($('#kn').value||'New app'),'aeg_k_••••••••'+Math.random().toString(36).slice(2,6),'never']);S.dlg=null;go();return toast('Key created. Copy it now: it will not be shown again.')}
+ if(k=='addKey'){const full='aeg_k_'+Math.random().toString(36).slice(2,10)+Math.random().toString(36).slice(2,10);S.keys.push([($('#kn').value||'New app'),'aeg_k_••••••••'+full.slice(-4),'never']);S.newKey=full;S.dlg='keyshown';return go()}
+ if(k=='copyKey'){(navigator.clipboard?navigator.clipboard.writeText(S.newKey):Promise.reject()).then(()=>toast('Key copied to clipboard'),()=>toast('Copy was blocked. Select the key and copy it manually.'));return}
  if(k=='activate'){S.profile=S.prof;S.dlg=null;go();return toast('Profile activated')}
  if(k=='synthRun'){S.dlg=null;go();return toast('Test passed: secret blocked, email transformed, nothing sent')}
  if(k=='toast')return toast(v);
  if(k=='sw'){const b=el;b.setAttribute('aria-checked',b.getAttribute('aria-checked')!='true');if(v=='lan'){S.dlg=b.getAttribute('aria-checked')=='true'?'lan':null;if(S.dlg)b.setAttribute('aria-checked','false');else S.bind='127.0.0.1';go()}return}
  if(window.EXTRA_ACT&&window.EXTRA_ACT(k,v,el))return;
 });
-render();

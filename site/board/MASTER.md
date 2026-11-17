@@ -16,9 +16,16 @@ Status date: 2026-11-17. Scope: design board prototype in `design/`. Sample data
 - **Targets:** >=36 px desktop; >=44 px at <=760 px.
 - **Motion:** short, springy only for toggles/sheets; `prefers-reduced-motion`, `prefers-reduced-transparency` and `prefers-contrast` handled in CSS.
 
-## 2. Review Center data (PROVISIONAL)
-Interim PRD-based field set, to be replaced by `docs/architecture/03-api-contracts.md` when published: finding{category, severity, location, confidence, reason}, original, proposed, diff, approvalKind{transform|transmit}, contentHash, coverageTier, uninspected, expiresAt, state{pending, edited-reinspecting, approved-transform, approved-transmit, rejected, expired, blocked}.
-Display-only placeholders NOT in the contract: request `id`, `app` name. Design assumptions: 5-minute timeout, 30-second reject undo, the sample hash (non-cryptographic in the prototype), word-level diff.
+## 2. Review Center data: contract_version 1, contract_minor 1 (real)
+Source: `docs/architecture/03-api-contracts.md` section 10 (branch `m0-m1-scaffold`, PR #3). `design/review.js` renders `ReviewRequest` snapshots as delivered and sends `review.decide` commands carrying `revision`, `proposal_version` and `payload_sha256`. The UI does not compute severity, risk, diff, hash, coverage or approval requirements (10.1).
+`review.js` contains a **mock daemon** (clearly separated, not product logic) that emits contract-shaped sample snapshots and answers decisions, including `stale_revision`, `hash_mismatch`, `consent_required`, `proposal_superseded`. Its hashes are fake (not SHA-256), and its diff builder is a toy.
+Rendered: all `ReviewState` values used by the samples, coverage label verbatim, tier, limitations, uninspected parts, `contextual_check_skipped_notice`, route preview (locality, provider, model, explanation, considered), findings (category/subtype, risk_level, confidence band, handling, mandatory, approvable), proposal parts + diff ops + changes + preservation + reinspection + reconstruction, approval steps with strength and `required_acknowledgements`, uninspected override, consequences and remediation, timeout from `expires_at` (zero is treated as expired only after the daemon confirms), content cleared on terminal states (I6), daemon-unreachable UI-local state.
+Not rendered or not covered: `direction: tool_call` (P1), `awaiting_tool_call_decision`, `review.get_content` paging for truncated parts, malformed-message state, `cancelled`/`failed` samples.
+**Assumptions needing architecture confirmation:**
+1. (Resolved, contract v1.1) The banner renders `ApprovalStep.transmit_content` verbatim. Only a daemon without `contract_minor` (v1.0) is inferred, and the banner then says so. If a v1.1 daemon sends `null`, the UI shows "SEND CONTENT NOT STATED BY AEGIS" and advises rejecting.
+2. (Resolved, contract v1.1) The original hash comes from `content.original_sha256`, present from the first snapshot.
+3. `server_time` skew handling: the prototype assumes client and mock clocks agree.
+4. (Resolved by contract v1.1, ADR-0023) Reject is final; undo removed everywhere.
 
 ## 3. Measured contrast (WCAG 2.2, computed by `tools/contrast.py`)
 Method: relative luminance per WCAG; translucent tints are alpha-blended over the card colour. Text needs 4.5:1; focus ring and control edges need 3:1 (1.4.11).
@@ -82,7 +89,7 @@ Fix made during measurement: control borders originally used `--border-strong` (
 ## 4. Per-screen status
 | Screen | Built | Browser-checked 1440 | Contrast-measured (tokens) | 375 px checked |
 |---|---|---|---|---|
-| Review Center (v2) | yes | yes + state-machine test | yes | yes (no overflow) |
+| Review Center (contract v1, mock daemon) | yes | yes + scripted state-machine test (approve, edit, ack, hash, override, expiry) | tokens only | yes, all 6 sample reviews, no overflow, targets >=44 px |
 | Overview, Inspector, Profiles, Router | yes | yes | yes | yes (no overflow) |
 | Analytics, Integrations, Settings | yes | yes | yes | yes (no overflow) |
 | States, Extension popup, Onboarding, Flows, Board, System, Handoff | yes | yes | yes | yes (no overflow) |
@@ -96,3 +103,38 @@ Fix made during measurement: control borders originally used `--border-strong` (
 - 1024 and 768 px layouts were not measured numerically.
 - Reduced-motion and reduced-transparency rules exist in CSS but were not exercised in a browser.
 - Figma: none, this is a coded board.
+
+## 6. Tester report 1 defects (2026-11-17): fixes and regression evidence
+Regression checks were scripted in the browser against the fixed build (mock daemon, sample data). Result = observed.
+| ID | Fix | Evidence |
+|---|---|---|
+| D2 high | Terminal states render no send, override or approve control; daemon refuses decisions on closed reviews | Rejected R-2037: state `rejected`, 0 send controls; forced override click leaves state `rejected` |
+| D1 | Blocked items get a UI-local "Dismiss from queue"; removed the old diff code path | Dismiss R-2040: no error, selection moves to next item |
+| D3 | Acknowledgement reset on every dialog open, close, Esc and selection change | Tick, Esc, reopen: unticked and button disabled |
+| D4 | Approve transformation and Approve and send stay locked unless `proposal.reinspection.state` is `clean`/`not_needed`; mock daemon also refuses (`reinspection_failed`); stepper shows "Re-inspection failed" | Edit adding an email: both disabled, daemon refusal observed |
+| D5 | All approval controls disabled while the editor is open | Both disabled during edit |
+| D6 | Mock daemon confirms expiry even while editing and closes the editor; banner reads "TEXT IDENTICAL TO THE ORIGINAL WILL BE SENT, NO NET CHANGE" when proposed equals original; visible 4-step stepper | Expired while editing; identical-text banner |
+| D7 | On open, focus moves into the dialog and background is `inert`; Tab and Shift+Tab wrap; Esc closes; focus returns to the opener | Scripted keydown events; not tested with a screen reader |
+| B1 | Removed the premature render at script load | Overview renders, no console error |
+| D8 | New-key dialog shows the key once with a Copy button (clipboard); gateway port changed to 8731 (daemon default per tester; confirm) | Copy control present; no 8742 left |
+| D9 | Removed Google Fonts links; system font stack; no external requests | `performance` resource list contains no cross-origin entries; no horizontal overflow on any of the 15 screens at 1024 px (I could not identify the original 7 px element, so cannot say which change fixed it) |
+| README | States that `contrast.py` needs the CSS path | README updated |
+Not addressed: D10 (Rust workspace build on Windows GNU) is outside the design scope. B6 note (small muted text 3.8-4.4:1 by rough heuristic): the script measures `--text3` at 4.5:1 or better on card, bg and bg2; not re-measured on rendered pixels.
+
+## 7. QA verification 1 follow-ups (design/contract-v1.1)
+| ID | Fix | Evidence (scripted, mock daemon) |
+|---|---|---|
+| D9 | Tooltip bubble is `display:none` until hover/focus; the theme-toggle variant is right-aligned | scrollWidth equals viewport at 1024 px on all 15 screens |
+| N1 | `edit_proposal` timer returns if the review is already closed | Edit then expire during re-inspection: stays `expired` |
+| N3 | Banner reads NOTHING WILL BE SENT WHILE RE-INSPECTION RUNS / UNTIL THE EDIT IS FIXED when re-inspection is pending or failed | Edit adding an email: banner changes, send locked |
+| N4 | Focus moves to the first acknowledgement checkbox (else Approve and send) after approving the transformation; the stepper and spinner stay visible while re-inspecting | document.activeElement checked; stepper present during reinspecting |
+| N5 | A warning banner says the unsaved edit was discarded when the review expires while editing | Banner text present |
+| N2 | Unknown or out-of-context `rv:` actions are ignored | Injected actions leave state unchanged |
+
+## 9. QA follow-ups N6-N8 (design/contract-v1.1)
+| ID | Fix | Evidence (scripted, mock daemon) |
+|---|---|---|
+| N6 | Approval is locked whenever Aegis did not state what will be sent: `transmit_content` null on a v1.1 snapshot disables Approve transformation, Send original, Approve and send and the acknowledgement checkboxes; the mock daemon also refuses. A v1.0 daemon (no `contract_minor`) is still inferred and labelled | null case: banner SEND CONTENT NOT STATED BY AEGIS, all controls disabled, forced action ignored; v1.0: "Inferred" shown and send enabled after acknowledgements |
+| N9 | `transmit_content: 'transformed'` with no proposal is treated the same way (banner + lock, no send) | banner and disabled send observed |
+| N7 | Inert Undo button removed from the States page "User rejects request" panel | no button matching /undo/ on #states |
+| N8 | A stale banner (e.g. "Edit sent for re-inspection") is not shown on a closed review; only banners marked `keep` (unsaved edit discarded) survive | banner visible while open, gone after expiry; N5 discard banner still shown |

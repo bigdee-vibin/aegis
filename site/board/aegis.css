@@ -22,7 +22,7 @@
 :root{
   --r-sm:6px; --r-md:10px; --r-lg:14px;
   --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px;--s7:48px;
-  --font:Inter,"Geist",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font:system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"Geist Mono","JetBrains Mono",ui-monospace,"Cascadia Code",Consolas,monospace;
   --ease:cubic-bezier(.2,.8,.2,1);
 }
@@ -317,3 +317,8 @@ sup{font-size:10px}
   .page{padding-inline:16px}
 }
 @media (max-width:760px){.topbar{gap:8px;padding-block:10px}.topbar .t-page{font-size:18px}.topbar .b-neu{display:none}}
+
+/* D9: tooltip bubble takes no layout space until hover or focus, and right-aligned variant cannot overflow the viewport */
+.tip::after{display:none}
+.tip:hover::after,.tip:focus-visible::after,.tip.show::after{display:block}
+.tip.end::after{left:auto;right:0;transform:none}
