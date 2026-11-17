@@ -7,12 +7,14 @@
 <link rel="stylesheet" href="aegis.css">
 </head>
 <body>
-<a href="#content" class="sr">Skip to content</a>
+<a href="#content" class="skip">Skip to content</a>
+<div id="live" class="sr" role="status" aria-live="polite" aria-atomic="true"></div>
 <div id="app"></div>
 <script src="icons.js"></script>
 <script src="app.js"></script>
 <script src="extra.js"></script>
 <script src="review.js"></script>
-<script>render()</script>
+<script src="extension.js"></script>
+<script>render();document.querySelector(".skip").addEventListener("click",function(e){e.preventDefault();var c=document.getElementById("content");if(c)c.focus()})</script>
 </body>
 </html>
