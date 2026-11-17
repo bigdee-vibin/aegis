@@ -1,0 +1,7 @@
+Aegis AI Firewall
+Copyright 2026 The Aegis contributors
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Third-party models, rule data and dependencies keep their own licences;
+they are listed in the SBOM produced at release time.
