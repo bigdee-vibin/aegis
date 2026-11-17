@@ -1,0 +1,16 @@
+[package]
+name = "aegis-audit"
+description = "Metadata-only audit events and sinks. No free-text fields by construction (invariant I6)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+aegis-core = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

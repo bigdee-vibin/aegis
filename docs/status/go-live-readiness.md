@@ -7,9 +7,9 @@
 | # | Gate | Status | Evidence / blocker |
 |---|---|---|---|
 | G1 | AT-01…AT-18 pass on Windows, macOS, Linux in CI | Not passed | AT-01 passes locally on pinned scratch build only; CI never run |
-| G2 | CI green on 3 OSes (build, clippy, fmt, cargo-deny, tests) | Not verified | Workflow pushed in PR #3, never executed |
+| G2 | CI green on 3 OSes (build, clippy, fmt, cargo-deny, tests) | Passed once, on the merged M1 branch (cde2292: windows, ubuntu, macos-latest, msrv, cargo-deny, no-outbound-sockets) | Run on main in progress; later branches need their own runs |
 | G3 | Independent tester + QA sign-off, zero open Critical/High | In progress | Tester running on PR #2/#3 |
-| G4 | Detection metrics measured vs targets (PRD §11) on synthetic corpora | Not started | Corpora (S0.4) not built |
+| G4 | Detection metrics measured vs targets (PRD §11) on synthetic corpora | NOT MET | Measured 2026-11-17 on pinned local build (not CI): secrets 172/201 (85.6%), obfuscation credentials 69/123 (56%), overall credential recall 74.4% vs target >=99% top-30; 7/52 secret false positives; PII negatives 0/50 blocked. 21 provider formats missing. Fix in progress |
 | G5 | Spikes S0.5/S0.6/S0.7 reported on all 3 OSes | Not started | Gate M4/M5 |
 | G6 | Slices M2–M5 complete (review/approve, local+routing, inbound/vault, extension) | Not started | M1 only, partially verified |
 | G7 | ≥1 site adapter at declared tier with canary; coverage labels accurate | Not started | Needs S0.7 |

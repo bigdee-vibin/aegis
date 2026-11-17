@@ -1,0 +1,11 @@
+/target
+node_modules/
+dist/
+.env
+*.pem
+*.key
+*.db
+*.db-journal
+.DS_Store
+# Extension dev signing key (OPEN-09) must never be committed
+extension-dev-key*

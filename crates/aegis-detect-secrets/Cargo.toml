@@ -1,0 +1,15 @@
+[package]
+name = "aegis-detect-secrets"
+description = "Deterministic secret scanner (stage 1). Mandatory; cannot be disabled by profiles."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+aegis-core = { workspace = true }
+regex = { workspace = true }
+
+[lints]
+workspace = true

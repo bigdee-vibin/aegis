@@ -1,0 +1,28 @@
+[package]
+name = "aegis-gateway"
+description = "Local OpenAI-compatible gateway: auth, validation, inspection, policy, then (mock) upstream."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+aegis-core = { workspace = true }
+aegis-policy = { workspace = true }
+aegis-inspect = { workspace = true }
+aegis-audit = { workspace = true }
+axum = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+subtle = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+aegis-detect-secrets = { workspace = true }
+aegis-testkit = { workspace = true }
+tower = { workspace = true }
+base64 = { workspace = true }
+
+[lints]
+workspace = true
