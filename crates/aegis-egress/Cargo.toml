@@ -1,0 +1,13 @@
+[package]
+name = "aegis-egress"
+description = "The only crate permitted an outbound HTTP client (ADR-0006). Placeholder in M0."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+
+[lints]
+workspace = true

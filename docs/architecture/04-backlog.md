@@ -65,8 +65,8 @@ Priority = brief tier. "Dep" = prerequisites.
 
 | ID | Story | P | Dep | Acceptance criteria |
 |---|---|---|---|---|
-| S3.1 | `Provider` trait + Ollama adapter (loopback-only client) | P1 | S2.6 | Chat completion via local model; model digest in metadata |
-| S3.2 | Operating modes + router (constraint-first, explanations) | P1 | S3.1, S1.5 | Table tests; explanation strings reviewed by UX |
+| S3.1 | `Provider` trait + Ollama adapter (loopback-only client) | **P0** (ADR-0021; AT-07/08) | S2.6 | Chat completion via local model; model digest in metadata |
+| S3.2 | Operating modes + router (constraint-first, explanations) | **P0** (ADR-0021; AT-07/08) | S3.1, S1.5 | Table tests; explanation strings reviewed by UX |
 | S3.3 | LOCAL ONLY invariant tests under network-deny | P0 | S3.2, S0.3 | Acceptance #6 |
 | S3.4 | Ollama failure → `ProposeFallback`, never auto | P0 | S3.2 | Acceptance #7 |
 | S3.5 | OpenAI + OpenAI-compatible adapters (Chat + Responses wire) | P1 | S2.6 | Conformance suite vs recorded fixtures; unsupported-param errors preserved |
@@ -111,7 +111,8 @@ Priority = brief tier. "Dep" = prerequisites.
 
 | ID | Story | P | Dep | Acceptance criteria |
 |---|---|---|---|---|
-| S7.1 | All 16 acceptance tests as one `tests/acceptance` suite in CI | P0 | M1–M5 | 16/16 green on 3 OSes |
+| S7.1 | Canonical acceptance suite AT-01…AT-18 (PRD §8; mapping in architecture §12) as one `tests/acceptance` suite in CI. AT-16 runs against a stub until the P2 learning story exists. Also keep the two behaviours not in the AT list as tests: tool-call argument/result inspection (FR-INB-3) and zero telemetry (NFR) | P0 | M1–M5 | 18/18 green on Windows, macOS and Linux (AT-16 stub noted) |
+| S2.9 | Static reason/explanation catalogue: plain-language `reason` and `remediation` text per finding subtype and decision code, no matched text (needed by the Review Center contract, architecture 03 §10) | P0 | S1.5 | Every `ReasonCode` and subtype has catalogue text; lint fails on missing entries |
 | S7.2 | Fuzzing (parsers, IPC, NM framing, normaliser) | P0 | — | Continuous fuzz, no open crashes |
 | S7.3 | Signing, notarisation, packaging, SBOM, reproducibility checks | P0 | — | Signed artifacts on 3 OSes |
 | S7.4 | Update manager (opt-in checks, signed manifests, approval) | P1 | OPEN-02 | #16 still passes with updates off |
