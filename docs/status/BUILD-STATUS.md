@@ -14,23 +14,24 @@ Read in this order: `docs/product/PRD.md` (requirement IDs FR-*, acceptance test
 - No real prompts, secrets or personal data in the repo. GitHub push protection blocks secret-shaped values (it blocked the generated corpora data), so test data is generated at run time with `python -I tests/corpora/generate.py` (branch `s0-4-corpora`; the data directory is gitignored).
 - The shared token can push branches, create PRs and releases. It cannot rerun Actions runs or enable Pages. Some agent sessions cannot create PRs; use `https://github.com/bigdee-vibin/aegis/pull/new/<branch>`.
 - CI (`.github/workflows/ci.yml`, runs on every push): rust on windows-latest, ubuntu-22.04 and macos-latest, msrv 1.90, cargo-deny, and "no outbound sockets outside aegis-egress". A new push cancels runs in progress, so push once and let CI finish. `macos-14` is unsupported on this account; use `macos-latest`.
+- After changing any Cargo.toml run `cargo metadata --locked` and commit Cargo.lock: the msrv job uses `--locked` and fails on a stale lockfile.
 - Local Windows build without MSVC: `docs/dev/local-build-without-msvc.md` (needs pinned tokio, axum and mio). CI tests the unpinned set and is the truth.
 
 ## 3. Branch and PR state (VERIFIED from GitHub at snapshot time)
 | Branch | Head | Latest CI | Status |
 |---|---|---|---|
 | `main` | f75d7f2 (plus this file) | success | PRD, ADRs 0001-0022, QA docs, status docs, M0 scaffold, M1 gateway slice with security-review fixes, older design board, demo site, Pages workflow, demo launcher |
-| `fix/secret-recall` | 66a8de6 | in progress | Secret-detection recall fixes. Off main 9b6b879. Has `docs/status/build-handoff.md` (architect notes: local build recipe, measured numbers, remaining work). Not merged |
+| `fix/secret-recall` | 13e2ea1 | success (all 6 jobs) | MERGED into main. Secret-detection recall fixes plus `docs/status/build-handoff.md` (architect notes: local build recipe, measured numbers, remaining work). Corpus test is opt-in (AEGIS_CORPORA_DIR); CI gate not added yet |
 | `pr/approval-engine` | 08e0b95 | success | Approval state machine and hash-bound single-use tokens, rebased onto main. Unit level only, not wired into the gateway. Not merged |
-| `design/contract-v1.1` (PR #6) | e0c9ce7 | in progress | Review Center on contract v1.1 plus N6/N7/N8/N9 fixes. QA re-check pending, then merge |
+| `design/contract-v1.1` (PR #6) | e0c9ce7 | success | MERGED into main (c0521bc). Independent QA re-check passed N6-N9 and regressions; `site/board` refreshed from `design/` |
 | `design/tool-call-states` | 9c1e97d | none | tool_call review and malformed-message states, based on e0c9ce7. NOT QA'd |
 | `docs-architect-sync` | c29f5c1 | cancelled (old macOS runner) | On old history: testkit S0.3, PII detectors S2.1, contract v1.1 + ADR-0023 + AT-19. Must be rebased onto main. Not merged |
 | `s2-3-approval-engine`, `s2-1-pii-detectors`, `s0-3-testkit` | 7a11b15, f8b9fa8, 5ce9539 | cancelled | Older stacked branches; superseded or to be rebased |
-| `s2-1b-corpus-metrics` | 4210116 | FAILURE (cause not investigated) | Opt-in corpus test; read the CI log before reusing |
+| `s2-1b-corpus-metrics` | 4210116 | FAILURE: the msrv job (`cargo check --workspace --all-targets --locked`) failed; the architect infers a stale Cargo.lock (new dev-dependencies), not confirmed from the log text | Its content now lives in `fix/secret-recall` |
 | `s0-4-corpora` | 565d785 | cancelled | Corpora generator and spec (data not committed) |
 | merged or superseded | | | `m0-m1-scaffold`, `fix/m1-security-review`, `design/board-v1`, `demo-site`, `docs/prd-v1`, `docs/status-handoff`, `qa-docs` |
 
-Merged PRs: #1 PRD, #2 design board, #3 M0/M1 gateway, #4 handoff/readiness/security review, #5 QA docs. Open: #6.
+Merged PRs: #1 PRD, #2 design board, #3 M0/M1 gateway, #4 handoff/readiness/security review, #5 QA docs, #6 design contract v1.1. None open.
 
 ## 4. What is VERIFIED to work
 - M1 gateway slice: an API key in a chat-completions prompt is blocked before any upstream call (a counting mock upstream saw 0 requests). CI is green on Windows, Linux, macOS, msrv, cargo-deny and the no-outbound-sockets job at `cde2292` and on main at `9b6b879`.
@@ -46,20 +47,20 @@ Merged PRs: #1 PRD, #2 design board, #3 M0/M1 gateway, #4 handoff/readiness/secu
 - The design board runs against a mock daemon, so nothing validates the real gateway. No screen-reader testing. Real clipboard copy not verified. Tooltip overflow while hovered not tested.
 
 ## 6. Open defects
-- Design N6/N7/N8/N9 reported fixed at `e0c9ce7` by the design session. QA re-check was requested; treat as unverified until it reports.
+- Design N6-N9 fixed and QA-verified at `e0c9ce7` (mock daemon only). Minor: with transmit_content null the acknowledgement checkboxes are removed rather than shown disabled, and Edit stays available.
 - Security review items (`docs/security/reviews/2026-11-17-m1-security-review.md`): fixed and merged except keyed hashing, Windows ACL and header timeout, left on purpose.
 - D10: the unpinned workspace does not build on Windows GNU without dlltool. CI is the truth.
 
 ## 7. In-flight workstreams (at snapshot time)
 1. Architecture/core (Rust): finish and CI-gate the recall work on `fix/secret-recall`, add the corpus gate to CI once `tests/corpora` is on main, rebase `docs-architect-sync`, then wire approval and egress into the gateway.
-2. Design: QA the N6-N9 fixes, merge PR #6, QA `design/tool-call-states`, refresh `site/board` from `design/` after merges (the site copy drifts).
+2. Design: QA `design/tool-call-states` (9c1e97d, built, not QA'd), then screen-reader and keyboard walkthrough notes; refresh `site/board` from `design/` after each design merge (the site copy drifts).
 3. QA: re-verify after each fix and keep `docs/qa/test-matrix.md` current with real results only.
 4. PM: keep this file and `docs/status/go-live-readiness.md` current. No v1.0 until all 14 gates are Passed with evidence.
 
 ## 8. Next actions in priority order
 1. Get CI green on `fix/secret-recall`, merge it, then add the corpus recall gate to CI (security-critical).
 2. Merge `pr/approval-engine` once CI is green, then rebase and merge testkit, PII detectors and the contract v1.1 docs from `docs-architect-sync`.
-3. Merge PR #6 after QA passes, then QA `design/tool-call-states`.
+3. QA `design/tool-call-states`, then merge it.
 4. Wire the approval engine and egress token into the gateway (AT-05, AT-06, AT-09 end to end). Add the Ollama adapter and LOCAL ONLY (AT-07, AT-08) with a real OS-level network-deny test where possible.
 5. Run spikes S0.5 (SQLCipher with OS key stores on three OSes), S0.6 (Native Messaging) and S0.7 (site interception). Implement the guard (ADR-0022, AT-19).
 6. Then inbound inspection, vault, extension, hardening (fuzzing, penetration test) and signed installers (see `docs/architecture/04-backlog.md`, M2-M7).
