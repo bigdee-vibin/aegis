@@ -19,7 +19,7 @@ use aegis_core::{Detector, DetectorOutcome, Finding};
 use aegis_detect_pii::PiiScanner;
 use serde_json::Value;
 use std::collections::BTreeMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 const IMPLEMENTED: [&str; 7] = [
     "email",
@@ -31,7 +31,7 @@ const IMPLEMENTED: [&str; 7] = [
     "in_pan",
 ];
 
-fn load(dir: &PathBuf, name: &str) -> Vec<Value> {
+fn load(dir: &Path, name: &str) -> Vec<Value> {
     std::fs::read_to_string(dir.join(format!("{name}.jsonl")))
         .unwrap()
         .lines()
@@ -65,11 +65,31 @@ fn family(subtype: &str) -> &str {
 
 #[test]
 fn pii_scanner_against_shared_corpora() {
-    let Ok(dir) = std::env::var("AEGIS_CORPORA_DIR") else {
-        println!("AEGIS_CORPORA_DIR not set: skipping PII corpus metrics");
-        return;
+    // A gate run (any gate variable set) must never skip or pass silently.
+    let gate_run = ["AEGIS_MIN_PII_RECALL", "AEGIS_MAX_PII_FALSE_POSITIVES"]
+        .iter()
+        .any(|v| std::env::var(v).is_ok());
+    let dir = match std::env::var("AEGIS_CORPORA_DIR") {
+        Ok(d) => PathBuf::from(d),
+        Err(_) if gate_run => {
+            panic!("gate variables are set but AEGIS_CORPORA_DIR is not: refusing to skip")
+        }
+        Err(_) => {
+            println!("AEGIS_CORPORA_DIR not set: skipping PII corpus metrics");
+            return;
+        }
     };
-    let dir = PathBuf::from(dir);
+    let dir = if dir.is_relative() {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .join(dir)
+    } else {
+        dir
+    };
+    assert!(
+        dir.is_dir(),
+        "AEGIS_CORPORA_DIR resolves to {dir:?}, which is not a directory"
+    );
     let scanner = PiiScanner::new().unwrap();
 
     // subtype -> (found, total)
@@ -86,6 +106,9 @@ fn pii_scanner_against_shared_corpora() {
             let hit = findings
                 .iter()
                 .any(|f| f.subtype.starts_with(family(&subtype)) && overlaps(f, start, end));
+            if !hit && IMPLEMENTED.contains(&family(&subtype)) {
+                println!("MISS {} {} {:?}", rec["id"], subtype, &text[start..end]);
+            }
             let entry = table.entry(subtype).or_default();
             entry.1 += 1;
             entry.0 += usize::from(hit);
@@ -111,6 +134,17 @@ fn pii_scanner_against_shared_corpora() {
     );
 
     let negatives = load(&dir, "pii_negative");
+    for r in &negatives {
+        let text = r["text"].as_str().unwrap();
+        for f in scan(&scanner, text) {
+            println!(
+                "FP {} {} {:?}",
+                r["id"],
+                f.subtype,
+                &text[f.span.start..f.span.end]
+            );
+        }
+    }
     let false_pos: Vec<String> = negatives
         .iter()
         .filter(|r| !scan(&scanner, r["text"].as_str().unwrap()).is_empty())

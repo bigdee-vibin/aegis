@@ -65,7 +65,60 @@ fn valid_ssn(s: &str) -> bool {
         return false;
     }
     let (area, group, serial) = (&d[0..3], &d[3..5], &d[5..9]);
-    area != "000" && area != "666" && !area.starts_with('9') && group != "00" && serial != "0000"
+    // Area 9xx is not issued as an SSN but is used by ITINs, which are just as
+    // sensitive, so it is accepted here.
+    area != "000" && area != "666" && group != "00" && serial != "0000"
+}
+
+fn not_ssh_user(s: &str) -> bool {
+    // `git@github.com:org/repo.git` is an ssh remote, not a person's address.
+    !s.to_ascii_lowercase().starts_with("git@")
+}
+
+fn valid_national_phone(s: &str) -> bool {
+    (10..=12).contains(&digits_of(s).len())
+}
+
+/// Ambiguous bare digit runs (Indian mobile numbers) only count with a nearby
+/// phone-related word.
+fn has_phone_context(text: &str, start: usize) -> bool {
+    let from = text[..start]
+        .char_indices()
+        .rev()
+        .nth(24)
+        .map_or(0, |(i, _)| i);
+    let before = text[from..start].to_ascii_lowercase();
+    [
+        "mobile",
+        "phone",
+        "reach",
+        "my number",
+        "number is",
+        "dial",
+        "sms",
+        "tel",
+        "call",
+        "contact",
+        "whatsapp",
+        "cell",
+        "mob",
+        "ph:",
+        "ph ",
+    ]
+    .iter()
+    .any(|w| before.contains(w))
+}
+
+/// A digit group continuing right next to the match (`1234 5678 9012 3456`,
+/// `... 97`) means the match is a slice of a longer number, not an identifier.
+fn digit_neighbour(text: &str, start: usize, end: usize) -> bool {
+    let sep = |c: char| c == ' ' || c == '-';
+    let mut before = text[..start].chars().rev();
+    let mut after = text[end..].chars();
+    let left = matches!((before.next(), before.next()), (Some(a), Some(b)) if sep(a) && b.is_ascii_digit());
+    let right =
+        matches!((after.next(), after.next()), (Some(a), Some(b)) if sep(a) && b.is_ascii_digit());
+    left || right
 }
 
 fn valid_pan(s: &str) -> bool {
@@ -105,7 +158,7 @@ const SPECS: &[Spec] = &[
         severity: Severity::Medium,
         confidence: 0.9,
         pattern: r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}\b",
-        validate: None,
+        validate: Some(not_ssh_user),
         isolated: false,
     },
     Spec {
@@ -136,6 +189,15 @@ const SPECS: &[Spec] = &[
         isolated: true,
     },
     Spec {
+        subtype: "phone_national",
+        category: Category::Identity,
+        severity: Severity::Medium,
+        confidence: 0.6,
+        pattern: r"\b0\d{1,4}(?:[ -]\d{2,8}){1,4}\b",
+        validate: Some(valid_national_phone),
+        isolated: true,
+    },
+    Spec {
         subtype: "payment_card",
         category: Category::Financial,
         severity: Severity::High,
@@ -149,7 +211,7 @@ const SPECS: &[Spec] = &[
         category: Category::Financial,
         severity: Severity::High,
         confidence: 0.95,
-        pattern: r"\b[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]{2,4}){3,8}\b",
+        pattern: r"\b[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]{1,4}){3,9}\b",
         validate: Some(valid_iban),
         isolated: true,
     },
@@ -225,6 +287,16 @@ impl Detector for PiiScanner {
                 if rule.isolated && !is_isolated(text, m.start(), m.end()) {
                     continue;
                 }
+                let ambiguous_digits = matches!(
+                    rule.subtype,
+                    "aadhaar" | "phone_in_mobile" | "phone_national"
+                );
+                if ambiguous_digits && digit_neighbour(text, m.start(), m.end()) {
+                    continue;
+                }
+                if rule.subtype == "phone_in_mobile" && !has_phone_context(text, m.start()) {
+                    continue;
+                }
                 findings.push(Finding {
                     category: rule.category,
                     subtype: rule.subtype.to_string(),
@@ -298,6 +370,11 @@ mod tests {
         assert!(has("call (415) 555-2671 now", "phone_us"));
         assert!(has("call 415-555-2671 now", "phone_us"));
         assert!(has("mobile 9876543210 ok", "phone_in_mobile"));
+        assert!(has("call 07700 900893 now", "phone_national"));
+        assert!(has("tel 090-0022-1508", "phone_national"));
+        assert!(has("fr 06 39 98 04 73", "phone_national"));
+        // A bare 10-digit number without phone context is an id, not a phone.
+        assert!(!has("build number 7287443664.", "phone_in_mobile"));
     }
 
     #[test]
@@ -319,7 +396,8 @@ mod tests {
     fn detects_ids() {
         assert!(has("ssn 123-45-6789", "us_ssn"));
         assert!(!has("ssn 000-12-3456", "us_ssn"));
-        assert!(!has("ssn 900-12-3456", "us_ssn"));
+        assert!(has("itin 900-12-3456", "us_ssn"));
+        assert!(!has("ssn 666-12-3456", "us_ssn"));
         let a = synthetic_aadhaar();
         assert!(has(&format!("aadhaar {a}"), "aadhaar"));
         let spaced = format!("{} {} {}", &a[0..4], &a[4..8], &a[8..12]);
@@ -339,6 +417,9 @@ mod tests {
     #[test]
     fn ordinary_text_is_clean() {
         let clean = [
+            "Order reference 8126 3106 5648 8400 shipped today.",
+            "Reference GB00 AUDQ 2852 0227 0046 97 was rejected.",
+            "git remote add origin git@github.com:acme/widgets.git",
             "The meeting is on 2024-01-15 at 10:30:00 in room 4.",
             "Version 1.2.3.4 shipped; see RFC 2616 section 14.",
             "UUID 123e4567-e89b-12d3-a456-426614174000 was reused.",
