@@ -312,6 +312,33 @@ aegis/
 
 ## 12. Acceptance criteria → mechanism → test
 
+### 12.1 Canonical suite AT-01 … AT-18 (PRD §8; ADR-0021)
+
+| AT | Criterion | Mechanism | Primary test | Legacy # |
+|---|---|---|---|---|
+| AT-01 | API key blocked/removed before external transmission; counting mock cloud sees 0 requests | Stage-1 secret scanner + mandatory block; I3 | Gateway e2e (S1.7) | 1 |
+| AT-02 | Personal info detected; correct profile policy applied | Stage-1 + Stage-2; layered policy | Corpus gates + policy table tests (S2.1/S2.2) | 2 |
+| AT-03 | High-risk context requires review where configured | Policy `Review` → approval engine | e2e: request held until decision | 3 |
+| AT-04 | Low-risk content follows notify-only | Policy `Notify`; no hold | e2e: forwarded, notice recorded | new |
+| AT-05 | Rejected requests are not submitted | State machine `Rejected`; no token minted | e2e + mock cloud 0 requests | 4 |
+| AT-06 | Edited sanitised content is inspected again | Mandatory `Reinspecting` | e2e: edit inserts a key → blocked | 5 |
+| AT-07 | LOCAL ONLY yields zero external inference calls | I2; no cloud route constructible | Network-deny harness | 6 |
+| AT-08 | Ollama failure in LOCAL ONLY never triggers cloud fallback | Router `ProposeFallback` only; empty set in LOCAL ONLY | e2e: stop Ollama; 0 cloud calls | 7 |
+| AT-09 | Cloud providers receive only approved payloads | Hash-bound `ApprovedOutbound` | Mock cloud sees exact approved bytes; mutation test | 8 |
+| AT-10 | Uploaded prompt-injection content cannot override policy | Provenance tags; control-plane-only policy inputs | Adversarial corpus in CI | 10 |
+| AT-11 | Sensitive data in model responses detected | Full-buffer inbound inspection (ADR-0007) | Secret in final chunk blocks everything | 11 |
+| AT-12 | Reconstruction mappings encrypted and local | Field-level AEAD; no egress path | Plaintext scan of vault; egress type test | 13 |
+| AT-13 | Session expiry clears temporary mappings | TTL sweep + crypto-shred (ADR-0014) | Time-travel test: mapping unreadable after expiry | new |
+| AT-14 | Companion failure blocks pending external requests safely | Fail-closed clients; I9 | Kill daemon/NM mid-request; assert nothing sent | 14 |
+| AT-15 | Malformed messages rejected | Strict framing/validation on gateway, IPC and NM | Fuzz + malformed-frame tests | new |
+| AT-16 | Learning suggestions inactive until approved | Suggestions are data; activation is an explicit user command | Stub test at M7 (feature is P2) | new |
+| AT-17 | Audit storage holds no prompt or full-response content | Typed audit API; no text columns | Canary scan of DB and logs | 12 |
+| AT-18 | Unsupported websites show accurate coverage warning | Coverage tiers (ADR-0012) | Extension e2e on unsupported domain | 15 |
+
+Two legacy items are **not** in the AT list but remain required behaviours and are tracked in S7.1: tool-call arguments/results inspected (legacy 9, FR-INB-3) and zero outbound telemetry by default (legacy 16, NFR). Proposed to the PM as AT-19/AT-20.
+
+### 12.2 Legacy 16-item list (superseded; kept for traceability)
+
 | # | Criterion | Mechanism | Primary test |
 |---|---|---|---|
 | 1 | API key blocked pre-transmission | Stage-1 secret scanner + mandatory block rule; I3 | Gateway e2e: mock cloud asserts 0 requests |
