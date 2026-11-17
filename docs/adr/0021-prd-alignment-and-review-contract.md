@@ -5,7 +5,7 @@
 **Context.** The product manager's PRD defines a canonical 18-item acceptance suite (AT-01…AT-18) that replaces the architect's earlier 16-item list, promotes the Ollama adapter and router to P0 (AT-07/08 need a real local model path), and asks for a Review Center data contract so the design session can build screens without inventing interfaces.
 
 **Decisions.**
-1. AT-01…AT-18 are canonical. Architecture §12 maps them to mechanisms and tests; S7.1 is the suite story. Two legacy behaviours not in the list (tool-call inspection; zero telemetry) stay as tests and are proposed to the PM as AT-19/AT-20.
+1. AT-01…AT-18 are canonical. Architecture §12 maps them to mechanisms and tests; S7.1 is the suite story. Two legacy behaviours not in the list (tool-call inspection; zero telemetry) stay as tests and are proposed to the PM as AT-20/AT-21 (AT-19 is taken by guard separation, ADR-0022).
 2. S3.1 (Ollama adapter) and S3.2 (modes + router) are P0.
 3. New story S2.9: a static catalogue of plain-language reasons and remediation text, so findings carry explanations without ever carrying matched text.
 4. The Review Center data contract is published in `docs/architecture/03-api-contracts.md` §10 (`contract_version = 1`). Key properties: daemon-decides/UI-renders; full-snapshot updates with `revision`; credential spans pre-masked by the daemon with same-length bullets so the UI never receives a secret; UTF-16 offsets; transform and transmit approvals are separate steps and transmit binds to the exact payload SHA-256; coverage tier and `UNINSPECTED` override are explicit fields.
