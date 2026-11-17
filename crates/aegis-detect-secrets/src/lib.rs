@@ -44,21 +44,21 @@ const SPECS: &[RuleSpec] = &[
         pattern: r"sk-ant-[A-Za-z0-9_-]{20,}",
         group: 0,
         confidence: 1.0,
-        validate: None,
+        validate: Some(varied_body),
     },
     RuleSpec {
         subtype: "openai_key",
         pattern: r"(?:^|[^A-Za-z0-9])(sk-(?:proj-|svcacct-|admin-)?[A-Za-z0-9_-]{20,})",
         group: 1,
         confidence: 0.95,
-        validate: None,
+        validate: Some(varied_body),
     },
     RuleSpec {
         subtype: "aws_access_key",
         pattern: r"(?:AKIA|ASIA|AGPA|AIDA|AROA)[0-9A-Z]{16}",
         group: 0,
         confidence: 1.0,
-        validate: None,
+        validate: Some(varied_body),
     },
     RuleSpec {
         subtype: "aws_secret_access_key",
@@ -72,46 +72,186 @@ const SPECS: &[RuleSpec] = &[
         pattern: r"(?:gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{50,})",
         group: 0,
         confidence: 1.0,
-        validate: None,
+        validate: Some(varied_body),
     },
     RuleSpec {
         subtype: "slack_token",
         pattern: r"xox[baprs]-[A-Za-z0-9-]{10,}",
         group: 0,
         confidence: 1.0,
-        validate: None,
+        validate: Some(varied_body),
     },
     RuleSpec {
         subtype: "google_api_key",
         pattern: r"AIza[0-9A-Za-z_-]{35}",
         group: 0,
         confidence: 1.0,
-        validate: None,
+        validate: Some(varied_body),
     },
     RuleSpec {
         subtype: "stripe_live_key",
         pattern: r"[sr]k_live_[0-9A-Za-z]{20,}",
         group: 0,
         confidence: 1.0,
-        validate: None,
+        validate: Some(varied_body),
     },
     RuleSpec {
         subtype: "huggingface_token",
         pattern: r"hf_[A-Za-z0-9]{34,}",
         group: 0,
         confidence: 1.0,
-        validate: None,
+        validate: Some(varied_body),
     },
     RuleSpec {
         subtype: "npm_token",
         pattern: r"npm_[A-Za-z0-9]{36}",
         group: 0,
         confidence: 1.0,
-        validate: None,
+        validate: Some(varied_body),
     },
     RuleSpec {
         subtype: "sendgrid_key",
         pattern: r"SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}",
+        group: 0,
+        confidence: 1.0,
+        validate: None,
+    },
+    RuleSpec {
+        subtype: "gitlab_token",
+        pattern: r"glpat-[A-Za-z0-9_-]{20,}",
+        group: 0,
+        confidence: 1.0,
+        validate: Some(varied_body),
+    },
+    RuleSpec {
+        subtype: "slack_webhook",
+        pattern: r"hooks\.slack\.com/services/T[A-Z0-9]{8,}/B[A-Z0-9]{8,}/[A-Za-z0-9]{20,}",
+        group: 0,
+        confidence: 1.0,
+        validate: None,
+    },
+    RuleSpec {
+        subtype: "google_oauth_secret",
+        pattern: r"GOCSPX-[A-Za-z0-9_-]{20,}",
+        group: 0,
+        confidence: 1.0,
+        validate: Some(varied_body),
+    },
+    RuleSpec {
+        subtype: "stripe_webhook_secret",
+        pattern: r"whsec_[A-Za-z0-9]{24,}",
+        group: 0,
+        confidence: 1.0,
+        validate: Some(varied_body),
+    },
+    RuleSpec {
+        subtype: "twilio_api_key",
+        pattern: r"SK[0-9a-f]{32}",
+        group: 0,
+        confidence: 0.9,
+        validate: Some(varied_body),
+    },
+    RuleSpec {
+        subtype: "mailgun_key",
+        pattern: r"key-[0-9a-f]{32}",
+        group: 0,
+        confidence: 0.9,
+        validate: Some(varied_body),
+    },
+    RuleSpec {
+        subtype: "mailchimp_key",
+        pattern: r"[0-9a-f]{32}-us[0-9]{1,2}",
+        group: 0,
+        confidence: 0.9,
+        validate: Some(varied_body),
+    },
+    RuleSpec {
+        subtype: "digitalocean_token",
+        pattern: r"do[por]_v1_[0-9a-f]{64}",
+        group: 0,
+        confidence: 1.0,
+        validate: Some(varied_body),
+    },
+    RuleSpec {
+        subtype: "shopify_token",
+        pattern: r"shp(?:at|ca|pa|ss)_[0-9a-f]{32}",
+        group: 0,
+        confidence: 1.0,
+        validate: Some(varied_body),
+    },
+    RuleSpec {
+        subtype: "square_token",
+        pattern: r"EAAA[A-Za-z0-9_-]{40,}",
+        group: 0,
+        confidence: 0.9,
+        validate: Some(varied_body),
+    },
+    RuleSpec {
+        subtype: "pypi_token",
+        pattern: r"pypi-AgEIcHlwaS5vcmc[A-Za-z0-9_-]{50,}",
+        group: 0,
+        confidence: 1.0,
+        validate: None,
+    },
+    RuleSpec {
+        subtype: "discord_token",
+        pattern: r"[MNO][A-Za-z0-9_-]{23,25}\.[A-Za-z0-9_-]{6}\.[A-Za-z0-9_-]{27,38}",
+        group: 0,
+        confidence: 0.85,
+        validate: Some(varied_body),
+    },
+    RuleSpec {
+        subtype: "telegram_bot_token",
+        pattern: r"[0-9]{8,10}:AA[A-Za-z0-9_-]{30,40}",
+        group: 0,
+        confidence: 0.95,
+        validate: Some(varied_body),
+    },
+    RuleSpec {
+        subtype: "notion_token",
+        pattern: r"(?:secret_[A-Za-z0-9]{40,50}|ntn_[A-Za-z0-9]{40,})",
+        group: 0,
+        confidence: 0.95,
+        validate: Some(varied_body),
+    },
+    RuleSpec {
+        subtype: "databricks_token",
+        pattern: r"dapi[0-9a-f]{32}",
+        group: 0,
+        confidence: 0.95,
+        validate: Some(varied_body),
+    },
+    RuleSpec {
+        subtype: "linear_key",
+        pattern: r"lin_api_[A-Za-z0-9]{36,}",
+        group: 0,
+        confidence: 1.0,
+        validate: Some(varied_body),
+    },
+    RuleSpec {
+        subtype: "postman_key",
+        pattern: r"PMAK-[0-9a-f]{24}-[0-9a-f]{34}",
+        group: 0,
+        confidence: 1.0,
+        validate: None,
+    },
+    RuleSpec {
+        subtype: "groq_key",
+        pattern: r"gsk_[A-Za-z0-9]{40,}",
+        group: 0,
+        confidence: 1.0,
+        validate: Some(varied_body),
+    },
+    RuleSpec {
+        subtype: "replicate_token",
+        pattern: r"r8_[A-Za-z0-9]{36,}",
+        group: 0,
+        confidence: 0.95,
+        validate: Some(varied_body),
+    },
+    RuleSpec {
+        subtype: "doppler_token",
+        pattern: r"dp\.(?:st|pt|ct|sa|scim|audit)\.(?:[a-z0-9_-]+\.)?[A-Za-z0-9]{40,}",
         group: 0,
         confidence: 1.0,
         validate: None,
@@ -141,7 +281,7 @@ const SPECS: &[RuleSpec] = &[
     // AWS_SECRET_ACCESS_KEY= and similar prefixed names match.
     RuleSpec {
         subtype: "password_assignment",
-        pattern: r#"(?i)(?:password|passwd|passphrase|pwd|secret|api[_-]?key|apikey|access[_-]?key|private[_-]?key|auth[_-]?token|access[_-]?token|client[_-]?secret|credentials?)[A-Za-z0-9_.-]*["']?\s*[:=]\s*["']?([^\s"',;]{8,})"#,
+        pattern: r#"(?i)(?:password|passwd|passphrase|pwd|secret|api[_-]?key|apikey|access[_-]?key|private[_-]?key|storage[_-]?key|account[_-]?key|shared[_-]?key|signing[_-]?key|encryption[_-]?key|master[_-]?key|auth[_-]?token|access[_-]?token|client[_-]?secret|credentials?)[A-Za-z0-9_.-]*["']?\s*[:=]\s*["']?([^\s"',;]{8,})"#,
         group: 1,
         confidence: 0.8,
         validate: Some(plausible_secret_value),
@@ -207,6 +347,14 @@ fn plausible_secret_value(value: &str) -> bool {
     if value.chars().all(|c| c == first) || lower.contains("xxxx") || lower.contains("****") {
         return false;
     }
+    if lower.starts_with("your")
+        || lower.contains("_here")
+        || lower.contains("replace")
+        || lower.contains("placeholder")
+        || lower.contains("redacted")
+    {
+        return false;
+    }
     !matches!(
         lower.as_str(),
         "changeme" | "password" | "your_password" | "yourpassword" | "placeholder" | "example123"
@@ -220,6 +368,15 @@ fn plausible_token_value(value: &str) -> bool {
     let has_letter = value.chars().any(|c| c.is_ascii_alphabetic());
     let has_digit = value.chars().any(|c| c.is_ascii_digit());
     (has_letter && has_digit) || value.len() >= 32
+}
+
+/// Rejects placeholder-shaped tokens such as `sk-xxxxxxxx...` or `ghp_0000...`:
+/// a real key has a varied body.
+fn varied_body(value: &str) -> bool {
+    let mut seen: Vec<char> = value.chars().collect();
+    seen.sort_unstable();
+    seen.dedup();
+    seen.len() >= 8
 }
 
 /// The mandatory secret detector.
