@@ -13,5 +13,9 @@ regex = { workspace = true }
 base64 = { workspace = true }
 unicode-normalization = { workspace = true }
 
+[dev-dependencies]
+aegis-detect-secrets = { workspace = true }
+serde_json = { workspace = true }
+
 [lints]
 workspace = true
