@@ -25,7 +25,7 @@ const segs=(g,opts,cur)=>`<div class="seg" role="group" aria-label="${g}">${opts
 const tabs=(g,opts,cur)=>`<div class="tabs" role="tablist">${opts.map(o=>`<button class="tab" role="tab" aria-selected="${o==cur}" data-act="tab:${g}:${o}">${o}</button>`).join('')}</div>`;
 const tb=(g,d)=>S.tab[g]||d;
 const sw=(id,on,label,dis)=>`<button class="switch" role="switch" aria-checked="${on}" aria-label="${label}" data-act="sw:${id}" ${dis?'disabled':''}></button>`;
-const pendingCount=()=>S.reviews.filter(r=>r.stage<3&&r.stage>-1).length;
+var pendingCount=()=>S.reviews.filter(r=>r.stage<3&&r.stage>-1).length;
 
 function shell(inner,route){
  const pc=pendingCount();
@@ -43,7 +43,7 @@ function overview(){const pc=pendingCount();return `${sample()}
 <div class="divider"></div><div class="grid g4" style="gap:12px">
 ${[['Mode',S.mode.replace('_',' '),'lock'],['Profile',S.profile,'layers'],['Local model',S.ollama?'Ollama ready':'Ollama unavailable','cpu'],['Providers','1 of 2 healthy','cloud']].map(([a,b,i])=>`<div><div class="t-meta">${a}</div><div class="row" style="gap:6px;margin-top:4px;font-weight:600">${ic(i)}${b}</div></div>`).join('')}</div></section>
 <section class="card" aria-labelledby="pr"><div class="card-h"><h2 class="t-section" id="pr">Decisions waiting for you</h2>${pc?badge('warn','alert',pc+' pending'):badge('ok','check','All clear')}</div>
-<p class="t-sec">${pc?`${S.reviews.filter(r=>r.sev=='crit'&&r.stage<3).length} blocked and ${pc-S.reviews.filter(r=>r.sev=='crit'&&r.stage<3).length} awaiting your review. Nothing has been sent.`:'Nothing needs your attention.'}</p>
+<p class="t-sec">${pc?`${blockedCount()} blocked and ${pc-blockedCount()} awaiting your review. Nothing has been sent.`:'Nothing needs your attention.'}</p>
 <div class="row" style="margin-top:16px"><a class="btn primary" href="#review">Open Review Center</a><a class="btn" href="#inspector">Inspect last prompt</a></div></section></div>
 <div class="grid g2"><section class="card"><div class="card-h"><h2 class="t-section">Integration coverage</h2><a href="#integrations" class="t-sec">Manage</a></div><div class="list">
 ${[['Chrome extension','ChatGPT, Claude (2 supported sites)','prot'],['OpenAI-compatible gateway','127.0.0.1:8742 · 2 app keys','prot'],['Other AI websites','Unsupported sites are not inspected','none'],['Ollama','Local runtime','prot']].map(([a,b,s])=>`<div class="li"><div class="grow"><div style="font-weight:550">${a}</div><div class="t-meta">${b}</div></div>${st(s)}</div>`).join('')}</div></section>
@@ -150,7 +150,7 @@ function settings(){const s=S.setSec;let b='';
 
 /* ---------- Dialogs ---------- */
 function dialog(){const d=S.dlg;if(!d)return '';let body='';
- const wrap=(t,p,acts)=>`<div class="scrim" data-act="closeDlg"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dt" onclick="event.stopPropagation()"><h2 id="dt">${t}</h2><div class="t-sec">${p}</div><div class="acts">${acts}</div></div></div>`;
+ const wrap=(t,p,acts)=>`<div class="scrim" data-act="closeDlg"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dt"><h2 id="dt">${t}</h2><div class="t-sec">${p}</div><div class="acts">${acts}</div></div></div>`;
  if(d=='reject')return wrap('Reject this request?','Nothing will be sent. You can undo for 30 seconds.',`<button class="btn" data-act="closeDlg">Keep reviewing</button><button class="btn danger" data-act="rejectNow">Reject request</button>`);
  if(d=='why'){const r=S.reviews[S.sel];return wrap('Detailed explanation',`<div class="list">${r.why.map(w=>`<div class="li" style="align-items:flex-start"><b style="width:120px;flex:none;color:var(--text)">${w[0]}</b><span>${w[1]}</span></div>`).join('')}</div>`,`<button class="btn primary" data-act="closeDlg">Close</button>`)}
  if(d=='lan')return wrap('Enable LAN access?','Other devices on your network will be able to reach the Aegis gateway. Each request must carry an app key. Only enable this if you trust the network.',`<button class="btn" data-act="closeDlg">Keep localhost only</button><button class="btn warn" data-act="confirmLan">Enable LAN access</button>`);

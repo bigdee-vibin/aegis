@@ -7,6 +7,8 @@ Run: `python -m http.server 5188 --directory aegis-design`, then open http://loc
 - `aegis.css`: tokens (dark default, `[data-theme="light"]`) and all components with states.
 - `icons.js`: Lucide-style outline icons, status and severity vocabulary.
 - `app.js`: shell, Overview, Review Center (two-step consent), Inspector, Profiles, Router, Analytics, Integrations, Settings, dialogs.
+- `review.js`: Review Center v2 (provisional data contract, two-step hash-bound consent, uninspected override, expiry, blocked).
+- `MASTER.md`: rules and accessibility evidence. `tools/contrast.py`: contrast measurement.
 - `extra.js`: Design board, Design system, States (12), Extension popup, Onboarding (10 steps), Flows A-F, Handoff.
 
 Notes
