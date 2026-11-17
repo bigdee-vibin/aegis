@@ -45,6 +45,8 @@ Chrome extension + OpenAI-compatible gateway in parallel as delivery direction; 
 | FR-DET-6 | Dummy/test keys exempted only via exact well-known patterns in Coding profile; no entropy or user-regex exemptions for credential class (OPEN-06) | P0 |
 | FR-DET-7 | Prompt-injection detector; untrusted content (uploads, retrieved data, tool results) cannot alter Aegis policy | P0 |
 | FR-DET-8 | If Stage 2 is unavailable on a cloud route: block when any Stage-1 finding ≥ Medium or the profile needs contextual coverage; else proceed with a visible "contextual check skipped" notice (OPEN-04) | P0 |
+| FR-DET-9 | **Guard separation.** The component that inspects content (Stage 2 classifier and any local rewriter) is a different model instance from the model being called, in every mode including LOCAL ONLY. It never shares the target's prompt, context or weights, and never receives the target's output as instructions | P0 |
+| FR-DET-10 | **Lightweight, non-generative guard.** Stage 1 is deterministic with no model. Stage 2 is a small local classifier that runs on CPU within stated budgets (proposed: model <= 500 MB on disk, p95 <= 50 ms per 1k tokens, <= 1 GB resident); it does not follow instructions found in user content. Budgets are baselined in S3.6 [R] | P1 |
 
 ### 5.2 Policy and approval (FR-POL)
 | ID | Requirement | P |
@@ -115,6 +117,15 @@ Chrome extension + OpenAI-compatible gateway in parallel as delivery direction; 
 | FR-BRW-4 | Companion disconnected, crashed or message malformed: pending external requests blocked (fail-closed); malformed messages rejected | P0 |
 | FR-BRW-5 | Review UI in popup/side panel, never injected into page DOM | P0 |
 
+### 5.8a Deployment independent of the browser (FR-DEP)
+| ID | Requirement | P |
+|---|---|---|
+| FR-DEP-1 | The Aegis daemon runs as an always-on per-user background process started at login (ADR-0003), independent of any browser; the Chrome extension is an optional client | P0 |
+| FR-DEP-2 | Any application can be protected by pointing its OpenAI-compatible base URL at the local gateway, with no browser installed | P0 |
+| FR-DEP-3 | UI shows which applications are routed through Aegis; applications that bypass the gateway are labelled Not protected. Aegis never implies system-wide coverage | P0 |
+| FR-DEP-4 | System-wide traffic interception (transparent proxy with locally trusted certificate) is out of scope for v1.0; evaluated for P2 desktop connectors with its own threat model and ADR | P2 |
+| FR-DEP-5 | Protection starts at user login; the UI states that nothing is protected before login or while the daemon is stopped | P0 |
+
 ### 5.9 Data, logging, updates (FR-DAT)
 | ID | Requirement | P |
 |---|---|---|
@@ -153,7 +164,7 @@ Chrome extension + OpenAI-compatible gateway in parallel as delivery direction; 
 | HYBRID | Per-profile split | Policy-controlled | Local security processing always on |
 | AUTO | Chosen by router | Proposed, not silent | Privacy > capability > quality > cost > latency |
 
-## 8. Canonical acceptance suite (AT-01 … AT-18)
+## 8. Canonical acceptance suite (AT-01 … AT-19)
 
 Replaces the 16-item list in the architecture docs (audit finding G-1). All must pass on Windows, macOS and Linux in CI before 1.0. Status reflects verified results: none yet.
 
@@ -177,6 +188,7 @@ Replaces the 16-item list in the architecture docs (audit finding G-1). All must
 | AT-16 | Learning suggestions inactive until approved | FR-PRF-1 | P2 story (to add) | Post-1.0 stub; test with stub at M7 | Not started |
 | AT-17 | Audit storage holds no prompt or full-response content | FR-DAT-1/2/3 | S1.6 | M1 | Not started |
 | AT-18 | Unsupported websites show accurate coverage warning | FR-BRW-3 | S5.3 | M5 | Not started |
+| AT-19 | Guard separation: the inspecting model is never the called model; in LOCAL ONLY with Ollama the guard runs as a separate instance with its own context; a test that configures them identical fails startup; instructions in content cannot change the guard's verdict | FR-DET-9/10 | S3.6 (+new story) | M3 | Not started |
 
 Note: the former architecture numbering differs; a mapping table must be added to 01 §12 (action item).
 
@@ -233,3 +245,4 @@ Aegis does not protect against malware under the same OS user, does not inspect 
 ## 15. Change log
 
 - 2026-11-17: draft 1 created from the product handoff, ADR-0001…0020 and the initial audit.
+- 2026-11-17: added FR-DET-9/10 (guard separation, lightweight guard), FR-DEP-1..5 (browser-independent always-on deployment) and AT-19; ADR-0022 proposed.
