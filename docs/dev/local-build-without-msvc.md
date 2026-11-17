@@ -18,3 +18,5 @@ tower = { version = "=0.5.2", features = ["util"] }
 then `cargo update -p mio --precise 1.0.3`.
 
 Results obtained with option 3 are reported as "pinned scratch build" and never as CI-equivalent.
+
+CI result reference: the unpinned dependency set is built by the `rust` job on windows-latest (MSVC), ubuntu-22.04 and macos-14.
