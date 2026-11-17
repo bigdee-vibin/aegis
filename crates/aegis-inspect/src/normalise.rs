@@ -32,6 +32,8 @@ struct Patterns {
     hex: Regex,
     base32: Regex,
     percent: Regex,
+    spaced: Regex,
+    wrapped: Regex,
 }
 
 fn patterns() -> Option<&'static Patterns> {
@@ -42,6 +44,8 @@ fn patterns() -> Option<&'static Patterns> {
             hex: Regex::new(r"(?:(?:0[xX]|\\x)?[0-9A-Fa-f]{2}[ ,:;.-]?){12,}").ok()?,
             base32: Regex::new(r"[A-Za-z2-7]{24,}={0,6}").ok()?,
             percent: Regex::new(r"%[0-9A-Fa-f]{2}").ok()?,
+            spaced: Regex::new(r"(?:[^\s] ){12,}[^\s]").ok()?,
+            wrapped: Regex::new(r"[A-Za-z0-9_+/=.-]{6,}(?:\r?\n[A-Za-z0-9_+/=.-]{6,})+").ok()?,
         })
     })
     .as_ref()
@@ -281,6 +285,21 @@ fn decode_candidates(text: &str, p: &Patterns) -> Vec<String> {
     for m in p.base32.find_iter(text) {
         if let Some(s) = printable_utf8(base32_decode(m.as_str())) {
             out.push(s);
+        }
+    }
+    // Characters separated by single spaces ("A K I A ...") and tokens wrapped
+    // across lines: rejoin only the matching runs, not the whole text.
+    for re in [&p.spaced, &p.wrapped] {
+        let mut joined = String::with_capacity(text.len());
+        let mut last = 0;
+        for m in re.find_iter(text) {
+            joined.push_str(&text[last..m.start()]);
+            joined.extend(m.as_str().chars().filter(|c| !c.is_whitespace()));
+            last = m.end();
+        }
+        if last > 0 {
+            joined.push_str(&text[last..]);
+            out.push(joined);
         }
     }
     if p.percent.is_match(text) {

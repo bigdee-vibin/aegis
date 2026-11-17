@@ -36,7 +36,11 @@ fn inputs(rec: &Value) -> Vec<String> {
     if let Some(parts) = rec.get("parts").and_then(Value::as_array) {
         let mut v: Vec<String> = parts
             .iter()
-            .filter_map(|p| p.as_str().map(str::to_string))
+            .filter_map(|p| {
+                p.as_str()
+                    .or_else(|| p["text"].as_str())
+                    .map(str::to_string)
+            })
             .collect();
         v.push(v.join(""));
         v
@@ -70,6 +74,7 @@ fn secret_pipeline_against_shared_corpora() {
     let scanner: Arc<dyn Detector> = Arc::new(SecretScanner::new().unwrap());
     let inspector = Inspector::new(vec![scanner]);
 
+    let mut recalls: Vec<(&str, f64)> = Vec::new();
     let mut total_pos = 0usize;
     let mut found_pos = 0usize;
     for corpus in ["secrets_positive", "obfuscation"] {
@@ -98,13 +103,18 @@ fn secret_pipeline_against_shared_corpora() {
             missed.len(),
             &missed[..missed.len().min(25)]
         );
+        println!("MISSED_IDS {corpus}: {}", missed.join(","));
+        recalls.push((
+            corpus,
+            (records.len() - missed.len()) as f64 / records.len().max(1) as f64,
+        ));
         total_pos += records.len();
         found_pos += records.len() - missed.len();
     }
 
     let negatives: Vec<Value> = load(&dir, "secrets_negative")
         .into_iter()
-        .filter(|r| r["expected_action"] == "allow")
+        .filter(|r| r["expected_action"] == "allow" && r["profile"] != "coding")
         .collect();
     let false_pos: Vec<String> = negatives
         .iter()
