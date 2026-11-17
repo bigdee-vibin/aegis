@@ -5,6 +5,10 @@
 //! audit → (only if allowed) upstream. Every failure before the upstream call
 //! ends the request; nothing is forwarded on an inspection failure.
 
+// `GatewayError` is large because it carries findings for the error body; it is
+// created at most once per request, so boxing it would only add noise.
+#![allow(clippy::result_large_err)]
+
 mod auth;
 mod error;
 mod upstream;
