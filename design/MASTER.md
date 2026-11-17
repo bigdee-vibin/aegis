@@ -201,3 +201,25 @@ UI-local states (the daemon cannot send them): **companion/daemon disconnected, 
 Also shown from app state, not from `Coverage`: current mode and profile (`ReviewRequest.mode`/`profile` exist; the popup has no contract message of its own for them), pending review count, and the title of the waiting review.
 **Assumptions needing confirmation (not in the contract):** the popup and side panel message set itself (the contract defines review events only); the meaning of tiers A-D (shown as letters, not described); the text "Do not paste sensitive information here" and "use the API gateway"; "Open the Aegis app... Retry" steps; the 440 px side panel and its metadata-only activity list; `canary: 'fail'` shown as "Self-test failed" with the daemon's own limitation text; no Chrome extension API (`chrome.sidePanel`) is used: this is a visual prototype only.
 Checks (scripted, browser): 9 frames render; all four labels verbatim; tiers A-D; fail-closed text; self-test badges; Retry gives a toast; no console errors; no overflow at 1440 or 375 px; buttons 44 px or taller at 375 px. Not done: keyboard walkthrough and screen-reader testing of the popup, real extension runtime, light-theme review.
+
+## 12. QA verification 2 follow-ups (N10-N14), contrast of rendered frames, popup walkthrough
+| ID | Fix | Evidence |
+|---|---|---|
+| N10 | Toasts no longer re-render the app; `afterRender` keeps focus on `#content` if it was there | Real keys: focus Reject, Enter, Tab, Enter in the dialog, then `document.activeElement` is `MAIN#content`; live text "ChatGPT, review rv_01: Rejected. NOTHING WILL BE SENT" |
+| N11 | Frame wrapper width is fixed: popups 360, side panels 440 (capped at 100% on narrow screens) | Measured at 1440 px: 7 popups = 360, 2 side panels = 440 |
+| N12 | Toast container is `aria-hidden`; every toast is announced once through `#live` | One live region in the DOM outside the app; toast text appears in `#live` |
+| N13 | "Simulate timeout" moved to the prototype controls (end of tab order); Save and Cancel sit directly under the textarea; the findings table stacks at <=1100 px instead of scrolling, so no scroll-wrapper tab stop | Tab order: Approve transformation comes before Simulate timeout; after the textarea the next stops are Save, then Cancel; 0 horizontal scrollers in the Review Center at 1440 px. NOT re-measured at 1024/768 |
+| N14 | One shared "daemon unreachable" switch (`S.unreach`): when on, all 4 site popups and both side panels show the fail-closed Disconnected state, and the Review Center shows its alert | 7 of 9 frames switch to "Aegis is not running" (the other 2 are the Waiting and Unreadable samples); Review Center banner shows from the same switch |
+
+### Rendered contrast (new `tools/contrast-dom.js`)
+Method: computed colours of every text node and icon, translucent backgrounds composited over the page, 4.5:1 text, 3:1 large text and icons; transitions disabled while measuring (in a background tab, transitions stall and give false failures). Limits are listed in the script header (no gradients/images/blur; no hover/focus/disabled variants).
+Result after fixes: 42 page views (15 screens + every Review Center sample review, dark and light) and the reject dialog in both themes: 3,766 text and icon items, 0 failures, minimum 4.63:1.
+Failures found and fixed on the way (all are real, not measurement artefacts):
+1. Light `--ok` text on its tint inside the translucent popup: 4.45:1. `--ok` darkened `#157347` to `#116A3E` (now 5.77:1 on `ok-soft`).
+2. Dark `--text3` on the selected queue item (3.79:1) and on `.card.elev` (4.4:1): `--text3` lightened `#7B8CA1` to `#8A9BB0`, and meta text inside the selected queue item uses `--text2`.
+3. Dark `--crit` badge text on `crit-soft` over the selected queue item: 4.07:1. New `--crit-text` (`#FCA5A5` dark, `#B42318` light) used by the Critical badge.
+`tools/contrast.py` gained `elev`, `crit-text` and `accent-soft` combinations; 0 failures. Earlier statements that token-level checks proved all text passed were too weak: they missed text on `elev` and tinted surfaces.
+
+### Popup and side panel: real-key walkthrough (observed, not a screen-reader test)
+Real Tab presses from the main region of `#extension`, in order: Simulate daemon unreachable → "Open full dashboard" (chatgpt.com, Tier A) → (claude.ai, Tier B) → (gemini.example, Tier C) → (unsupported-ai.example, Tier D) → "Retry connection" (Disconnected sample) → "Check again" (Unreadable sample; the Waiting sample has no control) → "Open full dashboard" (side panel chatgpt.com) → (side panel gemini.example) → wraps to "Skip to content". Each frame is a `role=group` with an `aria-label` naming site and tier.
+TESTER (screen reader): confirm each frame is announced with its label; the status badge text (Protected / Partially protected / Not protected / Disconnected) is read before the site; the "Aegis is not running" alert (`role=alert`) is announced when the switch is turned on (the DOM is replaced, which readers may not announce: report what you hear); limitation bullets are read as a list.

@@ -21,6 +21,7 @@ for name,sel in [('dark',':root,[data-theme="dark"]'),('light','[data-theme="lig
     bg,card,bg2,elev=t['bg'],t['card'],t['bg2'],t['elev']
     def tint(k,base):return over(t[k],base)
     tests=[('text','bg',t['text'],bg,4.5),('text','card',t['text'],card,4.5),('text2','bg',t['text2'],bg,4.5),('text2','card',t['text2'],card,4.5),('text2','bg2',t['text2'],bg2,4.5),
+    ('text3','elev',t['text3'],elev,4.5),('text2','elev',t['text2'],elev,4.5),('text','elev',t['text'],elev,4.5),('crit-text','crit-soft/elev',t['crit-text'],over(t['crit-soft'],elev),4.5),('crit-text','crit-soft/accent-soft/card',t['crit-text'],over(t['crit-soft'],over(t['accent-soft'],card)),4.5),('text3','accent-soft/card',t['text3'],over(t['accent-soft'],card),4.5),
     ('text3','card',t['text3'],card,4.5),('text3','bg',t['text3'],bg,4.5),('text3','bg2',t['text3'],bg2,4.5),
     ('accent-text','card',t['accent-text'],card,4.5),('accent-text','accent-soft/card',t['accent-text'],tint('accent-soft',card),4.5),
     ('accent-ink on accent (primary button)',' ',t['accent-ink'],over(t['accent'],card),4.5),

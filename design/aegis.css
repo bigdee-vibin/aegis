@@ -2,7 +2,7 @@
 :root,[data-theme="dark"]{
   --bg:#0B1118; --bg2:#111B27; --card:#151F2B; --elev:#1B2735; --border:#293747; --border-strong:#3A4D62; --edge:#6F8299;
   --accent:#2DD4BF; --accent-ink:#04201C; --accent-soft:rgba(45,212,191,.12); --accent-text:#2DD4BF;
-  --text:#F1F5F9; --text2:#94A3B8; --text3:#7B8CA1;
+  --text:#F1F5F9; --text2:#94A3B8; --text3:#8A9BB0; --crit-text:#FCA5A5;
   --warn:#FBBF24; --warn-soft:rgba(251,191,36,.12); --crit:#F87171; --crit-soft:rgba(248,113,113,.12);
   --ok:#34D399; --ok-soft:rgba(52,211,153,.12); --info:#7DB4F5; --info-soft:rgba(125,180,245,.12);
   --add:rgba(52,211,153,.16); --del:rgba(248,113,113,.16);
@@ -12,9 +12,9 @@
 [data-theme="light"]{
   --bg:#F4F6F9; --bg2:#EBEFF4; --card:#FFFFFF; --elev:#F7F9FB; --border:#D3DBE5; --border-strong:#A9B6C5; --edge:#708096;
   --accent:#0F766E; --accent-ink:#FFFFFF; --accent-soft:rgba(15,118,110,.09); --accent-text:#0B6159;
-  --text:#0F172A; --text2:#475569; --text3:#5B6B80;
+  --text:#0F172A; --text2:#475569; --text3:#5B6B80; --crit-text:#B42318;
   --warn:#8A5300; --warn-soft:rgba(180,110,0,.12); --crit:#B42318; --crit-soft:rgba(180,35,24,.09);
-  --ok:#157347; --ok-soft:rgba(21,115,71,.1); --info:#1D5FB4; --info-soft:rgba(29,95,180,.09);
+  --ok:#116A3E; --ok-soft:rgba(21,115,71,.1); --info:#1D5FB4; --info-soft:rgba(29,95,180,.09);
   --add:rgba(21,115,71,.14); --del:rgba(180,35,24,.12);
   --shadow:0 1px 2px rgba(15,23,42,.06),0 8px 24px rgba(15,23,42,.08);
   --scrim:rgba(15,23,42,.4); color-scheme:light;
@@ -326,3 +326,11 @@ sup{font-size:10px}
 /* Skip link: off-screen until focused (hash routing means href must not navigate) */
 .skip{position:absolute;left:8px;top:-64px;background:var(--accent);color:var(--accent-ink);padding:10px 16px;border-radius:10px;z-index:100;font-weight:600;text-decoration:none}
 .skip:focus{top:8px}
+
+/* N13: stacked table at compact widths so no scroll wrapper becomes a keyboard tab stop */
+@media (max-width:1100px){.table.rt thead{position:absolute;left:-9999px}.table.rt,.table.rt tbody,.table.rt tr,.table.rt td{display:block}.table.rt tr{border-bottom:.5px solid var(--border);padding:8px 0}.table.rt td{border:0;padding:3px 12px}.table.rt tr:hover td{background:none}.table.rt td::before{content:attr(data-label) ': ';font-size:12px;color:var(--text2);font-weight:600}}
+
+/* contrast: meta text on the selected (teal-tinted) queue item uses the stronger secondary colour */
+.queue-item .t-meta,.nav[aria-current="page"] .t-meta{color:var(--text2)}
+
+.b-crit{color:var(--crit-text)}

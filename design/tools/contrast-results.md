@@ -5,9 +5,15 @@
 | dark | text2 | bg | 7.39 | 4.5 | PASS |
 | dark | text2 | card | 6.49 | 4.5 | PASS |
 | dark | text2 | bg2 | 6.77 | 4.5 | PASS |
-| dark | text3 | card | 4.84 | 4.5 | PASS |
-| dark | text3 | bg | 5.51 | 4.5 | PASS |
-| dark | text3 | bg2 | 5.05 | 4.5 | PASS |
+| dark | text3 | elev | 5.33 | 4.5 | PASS |
+| dark | text2 | elev | 5.9 | 4.5 | PASS |
+| dark | text | elev | 13.81 | 4.5 | PASS |
+| dark | crit-text | crit-soft/elev | 6.74 | 4.5 | PASS |
+| dark | crit-text | crit-soft/accent-soft/card | 5.93 | 4.5 | PASS |
+| dark | text3 | accent-soft/card | 4.6 | 4.5 | PASS |
+| dark | text3 | card | 5.86 | 4.5 | PASS |
+| dark | text3 | bg | 6.68 | 4.5 | PASS |
+| dark | text3 | bg2 | 6.11 | 4.5 | PASS |
 | dark | accent-text | card | 8.93 | 4.5 | PASS |
 | dark | accent-text | accent-soft/card | 7.01 | 4.5 | PASS |
 | dark | accent-ink on accent (primary button) |   | 9.18 | 4.5 | PASS |
@@ -30,6 +36,12 @@
 | light | text2 | bg | 7.0 | 4.5 | PASS |
 | light | text2 | card | 7.58 | 4.5 | PASS |
 | light | text2 | bg2 | 6.56 | 4.5 | PASS |
+| light | text3 | elev | 5.16 | 4.5 | PASS |
+| light | text2 | elev | 7.18 | 4.5 | PASS |
+| light | text | elev | 16.92 | 4.5 | PASS |
+| light | crit-text | crit-soft/elev | 5.38 | 4.5 | PASS |
+| light | crit-text | crit-soft/accent-soft/card | 5.02 | 4.5 | PASS |
+| light | text3 | accent-soft/card | 4.8 | 4.5 | PASS |
 | light | text3 | card | 5.44 | 4.5 | PASS |
 | light | text3 | bg | 5.03 | 4.5 | PASS |
 | light | text3 | bg2 | 4.71 | 4.5 | PASS |
@@ -40,8 +52,8 @@
 | light | warn | warn-soft/card | 5.48 | 4.5 | PASS |
 | light | crit | card | 6.57 | 4.5 | PASS |
 | light | crit | crit-soft/card | 5.67 | 4.5 | PASS |
-| light | ok | card | 5.87 | 4.5 | PASS |
-| light | ok | ok-soft/card | 5.1 | 4.5 | PASS |
+| light | ok | card | 6.66 | 4.5 | PASS |
+| light | ok | ok-soft/card | 5.77 | 4.5 | PASS |
 | light | info | card | 6.27 | 4.5 | PASS |
 | light | info | info-soft/card | 5.5 | 4.5 | PASS |
 | light | text | add/card (diff ins) | 14.6 | 4.5 | PASS |

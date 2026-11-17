@@ -35,7 +35,7 @@ function shell(inner,route){
  <div class="main"><header class="topbar"><h1 class="t-page" id="ttl">${TITLES[route]}</h1><div class="grow"></div>
  <span class="badge b-acc">${ic('lock')}${S.mode.replace('_',' ')}</span><span class="badge b-neu">${ic('layers')}${S.profile}</span>
  <button class="btn ghost icon tip end" data-tip="Toggle theme" aria-label="Toggle light or dark theme" data-act="theme">${ic(document.documentElement.dataset.theme=='light'?'moon':'sun')}</button></header>
- <main class="page" id="content" tabindex="-1">${inner}</main></div></div>${dialog()}<div class="toasts" role="status" aria-live="polite">${S.toasts.map(t=>`<div class="toast">${ic('circlecheck')}<span>${t}</span></div>`).join('')}</div>`}
+ <main class="page" id="content" tabindex="-1">${inner}</main></div></div>${dialog()}<div class="toasts" aria-hidden="true">${S.toasts.map(x=>`<div class="toast" data-tid="${x.id}">${ic('circlecheck')}<span>${esc(x.t)}</span></div>`).join('')}</div>`}
 
 /* ---------- Overview ---------- */
 function overview(){const pc=pendingCount();return `${sample()}
@@ -139,13 +139,21 @@ function dialog(){const d=S.dlg;if(!d)return '';let body='';
 const R={overview,review,inspector,profiles,router,analytics,integrations,settings};
 function render(){const route=(location.hash||'#overview').slice(1);const f=R[route]||(window.EXTRA&&window.EXTRA[route])||overview;const r=R[route]||window.EXTRA&&window.EXTRA[route]?route:'overview';
  const ae=document.activeElement;const inDlg=!!(ae&&ae.closest&&ae.closest('.dialog'));const key=ae&&ae.dataset?ae.dataset.act:null;
- const y=scrollY;$('#app').innerHTML=shell(f(),r);scrollTo(0,y);afterRender(inDlg,key)}
-function afterRender(inDlg,key){const dlg=document.querySelector('.dialog'),sh=document.querySelector('.shell');
+ const wasContent=!!(ae&&ae.id=='content');
+ const y=scrollY;$('#app').innerHTML=shell(f(),r);scrollTo(0,y);afterRender(inDlg,key,wasContent)}
+function afterRender(inDlg,key,wasContent){const dlg=document.querySelector('.dialog'),sh=document.querySelector('.shell');
  if(dlg){sh&&sh.setAttribute('inert','');dlg.setAttribute('tabindex','-1');const t=inDlg&&key?dlg.querySelector('[data-act="'+key+'"]:not([disabled])'):null;(t||dlg.querySelector('input:not([disabled]),button:not([disabled])')||dlg).focus();S._wasDlg=true}
  else if(S._wasDlg){S._wasDlg=false;const o=S.opener&&document.querySelector('[data-act="'+S.opener+'"]');const tgt=o||document.getElementById('content');tgt&&tgt.focus();S.opener=null}
- else if(key){const t=document.querySelector('[data-act="'+key+'"]');t&&t.focus({preventScroll:true})}}
+ else if(key){const t=document.querySelector('[data-act="'+key+'"]');t&&t.focus({preventScroll:true})}
+ else if(wasContent){const c=document.getElementById('content');c&&c.focus({preventScroll:true})}}
 addEventListener('hashchange',()=>{S.editing=false;S.dlg=null;render();scrollTo(0,0);$('#content')?.focus()});
-function toast(t){S.toasts.push(t);render();setTimeout(()=>{S.toasts.shift();render()},3200)}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+let _tid=0;
+function toast(t){/* N12: announced once through the single #live region; N10: adding a toast does not re-render the app (focus is kept) */
+ const x={id:++_tid,t};S.toasts.push(x);const box=document.querySelector('.toasts');
+ if(box){const el=document.createElement('div');el.className='toast';el.dataset.tid=x.id;el.innerHTML=ic('circlecheck')+'<span></span>';el.lastChild.textContent=t;box.appendChild(el)}
+ const live=document.getElementById('live');if(live){live.textContent='';setTimeout(()=>{live.textContent=t},40)}S._live=null;
+ setTimeout(()=>{S.toasts=S.toasts.filter(y=>y.id!==x.id);const el=document.querySelector('[data-tid="'+x.id+'"]');el&&el.remove()},3200)}
 document.addEventListener('keydown',e=>{
  if(e.key=='Escape'&&S.dlg){S.dlg=null;S.ovAck=false;S.newKey=null;render();return}
  if(e.key=='Tab'&&S.dlg){const d=document.querySelector('.dialog');if(!d)return;const f=[...d.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select,textarea,[tabindex]:not([tabindex="-1"])')];if(!f.length){e.preventDefault();return}const first=f[0],last=f[f.length-1];if(!d.contains(document.activeElement)){first.focus();e.preventDefault()}else if(e.shiftKey&&document.activeElement==first){last.focus();e.preventDefault()}else if(!e.shiftKey&&document.activeElement==last){first.focus();e.preventDefault()}}});
