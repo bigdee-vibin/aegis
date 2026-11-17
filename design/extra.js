@@ -24,7 +24,7 @@ states(){const C=[
 ['crit','octagon','Critical secret detected',['Prompt contained an AWS secret key.','Credentials are never sent (mandatory policy).'],'Remove the key and retry, or cancel.',`<a class="btn primary" href="#review">Open request</a>`],
 ['warn','alert','High-risk prompt awaiting approval',['Personal details found.','Policy requires review for high risk.'],'Review the proposed version.',`<a class="btn primary" href="#review">Review</a>`],
 ['','pencil','Editing transformed prompt',['You are changing the proposed text.','Edits are re-inspected before sending.'],'Save to re-inspect.',`<button class="btn primary">Save & re-inspect</button>`],
-['','x','User rejects request',['Request cancelled by you.','Nothing was sent.'],'Rejection is final. Send the prompt again from your app if you change your mind.',`<button class="btn">Undo</button>`],
+['','x','User rejects request',['Request cancelled by you.','Nothing was sent.'],'Rejection is final. Send the prompt again from your app if you change your mind.',''],
 ['crit','wifioff','Ollama unavailable in LOCAL ONLY',['The local model is not responding.','LOCAL ONLY never falls back to cloud.'],'Start Ollama or change mode yourself.',`<a class="btn primary" href="#router">Open Model Router</a>`],
 ['warn','ban','Cloud fallback prevented',['A cloud route was skipped.','Policy forbids cloud for this content.'],'Use a local model or edit the content.',`<a class="btn" href="#router">See routing</a>`],
 ['crit','shieldoff','Unsupported website',['This site is not supported.','Aegis cannot inspect it. It is Not protected.'],'Use a supported site or the API gateway.',`<a class="btn" href="#extension">See popup</a>`],

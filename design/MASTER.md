@@ -130,3 +130,11 @@ Not addressed: D10 (Rust workspace build on Windows GNU) is outside the design s
 | N4 | Focus moves to the first acknowledgement checkbox (else Approve and send) after approving the transformation; the stepper and spinner stay visible while re-inspecting | document.activeElement checked; stepper present during reinspecting |
 | N5 | A warning banner says the unsaved edit was discarded when the review expires while editing | Banner text present |
 | N2 | Unknown or out-of-context `rv:` actions are ignored | Injected actions leave state unchanged |
+
+## 9. QA follow-ups N6-N8 (design/contract-v1.1)
+| ID | Fix | Evidence (scripted, mock daemon) |
+|---|---|---|
+| N6 | Approval is locked whenever Aegis did not state what will be sent: `transmit_content` null on a v1.1 snapshot disables Approve transformation, Send original, Approve and send and the acknowledgement checkboxes; the mock daemon also refuses. A v1.0 daemon (no `contract_minor`) is still inferred and labelled | null case: banner SEND CONTENT NOT STATED BY AEGIS, all controls disabled, forced action ignored; v1.0: "Inferred" shown and send enabled after acknowledgements |
+| N9 | `transmit_content: 'transformed'` with no proposal is treated the same way (banner + lock, no send) | banner and disabled send observed |
+| N7 | Inert Undo button removed from the States page "User rejects request" panel | no button matching /undo/ on #states |
+| N8 | A stale banner (e.g. "Edit sent for re-inspection") is not shown on a closed review; only banners marked `keep` (unsaved edit discarded) survive | banner visible while open, gone after expiry; N5 discard banner still shown |
