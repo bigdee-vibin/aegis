@@ -4,6 +4,7 @@ members = [
     "crates/aegis-core",
     "crates/aegis-policy",
     "crates/aegis-detect-secrets",
+    "crates/aegis-detect-pii",
     "crates/aegis-inspect",
     "crates/aegis-audit",
     "crates/aegis-gateway",
