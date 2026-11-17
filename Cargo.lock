@@ -45,6 +45,7 @@ version = "0.0.1"
 dependencies = [
  "aegis-core",
  "regex",
+ "serde_json",
 ]
 
 [[package]]

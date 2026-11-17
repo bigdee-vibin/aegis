@@ -72,3 +72,12 @@ jobs:
           AEGIS_MIN_PLAIN_RECALL: "0.99"
           AEGIS_MIN_OBFUSCATION_RECALL: "0.83"
           AEGIS_MAX_SECRET_FALSE_POSITIVES: "0"
+      # PII corpus gate: recall over the implemented structured identifiers
+      # only (email, phone, card, IBAN, SSN/ITIN, Aadhaar, PAN). Regional IDs,
+      # names, addresses and dates of birth have NO detector yet; the test
+      # output lists them as "(no detector yet)". Training-set recall.
+      - run: cargo test -p aegis-detect-pii --test corpus_pii -- --nocapture
+        env:
+          AEGIS_CORPORA_DIR: ${{ github.workspace }}/tests/corpora/data
+          AEGIS_MIN_PII_RECALL: "0.95"
+          AEGIS_MAX_PII_FALSE_POSITIVES: "0"
