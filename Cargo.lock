@@ -40,6 +40,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "aegis-detect-pii"
+version = "0.0.1"
+dependencies = [
+ "aegis-core",
+ "regex",
+]
+
+[[package]]
 name = "aegis-detect-secrets"
 version = "0.0.1"
 dependencies = [
@@ -92,6 +100,12 @@ dependencies = [
 [[package]]
 name = "aegis-testkit"
 version = "0.0.1"
+dependencies = [
+ "axum",
+ "serde_json",
+ "sha2",
+ "tokio",
+]
 
 [[package]]
 name = "aho-corasick"
