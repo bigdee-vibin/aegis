@@ -26,3 +26,4 @@ Items marked **Approved input** restate decisions already made by the PM; others
 | [0019](0019-open-decisions-resolution.md) | Resolution of OPEN-01 … OPEN-10 | Accepted |
 | [0020](0020-v1-os-scope.md) | v1.0 OS scope: Windows, macOS, Linux | Accepted |
 | [0021](0021-prd-alignment-and-review-contract.md) | Align to PRD acceptance suite; Review Center data contract | Accepted |
+| [0023](0023-review-contract-v1-1.md) | Review Center contract v1.1 (transmit_content, original_sha256, no reject-undo) | Accepted |

@@ -220,6 +220,7 @@ type ReviewState =
 
 interface ReviewRequest {
   contract_version: 1;
+  contract_minor: 1;                      // additive revisions; see 10.11
   review_id: string;                      // stable for the life of the request
   request_id: string;                     // same id as in audit metadata and API errors
   revision: number;                       // starts at 1, +1 on every change
@@ -311,6 +312,7 @@ interface Coverage {
 interface ContentView {
   parts: ContentPart[];
   total_utf16_length: number;
+  original_sha256: Sha256;                // hash of the exact ORIGINAL payload; present from the first snapshot (10.11)
 }
 interface ContentPart {
   part_id: string;
@@ -391,6 +393,7 @@ interface ApprovalStep {
   kind: ApprovalKind;
   status: 'not_required' | 'pending' | 'granted' | 'declined' | 'denied' | 'expired' | 'invalidated';
   strength: 'notify' | 'one_click' | 'explicit_confirm' | 'not_approvable';   // ADR-0008
+  transmit_content: 'original' | 'transformed' | null;   // transmit step only: which text WILL BE SENT (10.11)
   required_acknowledgements: string[];    // finding_ids the user must tick (explicit_confirm, High)
   binds_to: { payload_sha256: Sha256 } | null;   // transmit / override: the exact bytes
   granted_at: Iso8601 | null;
@@ -497,3 +500,12 @@ Review of a personal-data prompt with an engine proposal: `state = "awaiting_tra
 - `route.considered` and `explanation` need the router (S3.2, now P0).
 - Tier and `limitations` strings come from adapter manifests (S5.3).
 - Risk reasons and finding explanations need a static catalogue (new story, see backlog S2.9).
+
+### 10.11 Changelog
+
+**v1.1 (additive, ADR-0023; `contract_minor = 1`).** Requested by the design session; existing v1.0 fields are unchanged.
+- `ApprovalStep.transmit_content: 'original' | 'transformed' | null` on the `transmit` step states which text will be sent, so the UI no longer infers it. `'original'` when no transform was approved or proposed (or the user declined it); `'transformed'` when the proposal (engine or user-edited) will be sent. `null` on other step kinds.
+- `ContentView.original_sha256` is present from the first snapshot (state `inspecting` onward), so the WILL BE SENT banner can show the original-text hash before any proposal exists. It is the SHA-256 of the exact original payload bytes, computed before masking; masked text is a display artefact only. For the transformed case the banner uses `proposal.final_payload.sha256`.
+- **Reject-undo is dropped for v1.** Rejection is final: the held API request is released immediately with a `review_rejected` error and the extension is told to discard the send. An undo window would require holding or replaying the request after the user said no. Revisit only through a new ADR.
+
+Design session: renders `transmit_content` verbatim and must treat an absent `contract_minor` as 0 (v1.0 daemon).
