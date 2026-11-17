@@ -34,7 +34,7 @@ function shell(inner,route){
  return `<div class="shell"><nav class="side" aria-label="Primary"><div class="brand">${ic('shieldcheck','xl')}<span>Aegis</span></div>${nav}<div class="navgrp">Design board</div>${board}<div class="sidefoot t-meta" style="margin-top:auto;padding:12px 10px">Platform rollout for v1.0 is not confirmed; this design is platform-adaptable.</div></nav>
  <div class="main"><header class="topbar"><h1 class="t-page" id="ttl">${TITLES[route]}</h1><div class="grow"></div>
  <span class="badge b-acc">${ic('lock')}${S.mode.replace('_',' ')}</span><span class="badge b-neu">${ic('layers')}${S.profile}</span>
- <button class="btn ghost icon tip" data-tip="Toggle theme" aria-label="Toggle light or dark theme" data-act="theme">${ic(document.documentElement.dataset.theme=='light'?'moon':'sun')}</button></header>
+ <button class="btn ghost icon tip end" data-tip="Toggle theme" aria-label="Toggle light or dark theme" data-act="theme">${ic(document.documentElement.dataset.theme=='light'?'moon':'sun')}</button></header>
  <main class="page" id="content" tabindex="-1">${inner}</main></div></div>${dialog()}<div class="toasts" role="status" aria-live="polite">${S.toasts.map(t=>`<div class="toast">${ic('circlecheck')}<span>${t}</span></div>`).join('')}</div>`}
 
 /* ---------- Overview ---------- */

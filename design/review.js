@@ -61,7 +61,7 @@ function decide(id,rev,dec){const r=D.reviews.find(x=>x.review_id==id);const err
  if(dec.type=='reject'){r.state='rejected';r.expires_at=null;r.approvals.steps.forEach(s=>{if(s.status=='pending')s.status='declined'});r.approvals.current=null;bump();return{ok:true,review:r}}
  if(dec.type=='approve_transform'){const p=r.proposal;if(!p||dec.proposal_id!=p.proposal_id||dec.proposal_version!=p.proposal_version)return err('proposal_superseded','The proposal changed. Review the new version.');if(p.reinspection.state!=='clean'&&p.reinspection.state!=='not_needed')return err('reinspection_failed','Re-inspection did not pass. Edit the text again before approving.');const s=step('transform');s.status='granted';s.granted_at=iso(now());step('transmit').binds_to={payload_sha256:p.final_payload.sha256};step('transmit').transmit_content='transformed';r.state='awaiting_transmit_decision';r.approvals.current='transmit';bump();return{ok:true,review:r}}
  if(dec.type=='decline_transform'){step('transform').status='declined';step('transmit').binds_to={payload_sha256:r.content.original_sha256};step('transmit').transmit_content='original';r.state='awaiting_transmit_decision';r.approvals.current='transmit';bump();return{ok:true,review:r}}
- if(dec.type=='edit_proposal'){r.approvals.steps.forEach(s=>{if(s.status=='granted'||s.status=='pending'||s.status=='declined'){s.status='invalidated';s.invalidated_reason='edited'}});r.state='reinspecting';r.approvals.current=null;bump();const text=dec.parts[0].text;setTimeout(()=>{const p=r.proposal;const newF=/[\w.+-]+@[\w-]+\.[\w.]+/.test(text);r.proposal={...p,proposal_version:p.proposal_version+1,source:'user_edited',parts:[{part_id:'p0',text}],final_payload:{sha256:fakeSha(text),bytes:text.length},diff:[{part_id:'p0',ops:[{op:'replace',original:{start:0,end:r.content.parts[0].text.length},proposed:{start:0,end:text.length}}]}],reinspection:{state:newF?'new_findings':'clean',new_finding_ids:newF?['f_new']:[]}};
+ if(dec.type=='edit_proposal'){r.approvals.steps.forEach(s=>{if(s.status=='granted'||s.status=='pending'||s.status=='declined'){s.status='invalidated';s.invalidated_reason='edited'}});r.state='reinspecting';r.approvals.current=null;bump();const text=dec.parts[0].text;setTimeout(()=>{if(isTerm(r))return;/* N1: closed meanwhile (e.g. expired) */const p=r.proposal;const newF=/[\w.+-]+@[\w-]+\.[\w.]+/.test(text);r.proposal={...p,proposal_version:p.proposal_version+1,source:'user_edited',parts:[{part_id:'p0',text}],final_payload:{sha256:fakeSha(text),bytes:text.length},diff:[{part_id:'p0',ops:[{op:'replace',original:{start:0,end:r.content.parts[0].text.length},proposed:{start:0,end:text.length}}]}],reinspection:{state:newF?'new_findings':'clean',new_finding_ids:newF?['f_new']:[]}};
    r.approvals.steps.forEach(s=>{if(s.status=='invalidated')s.status='pending'});step('transmit').binds_to={payload_sha256:r.proposal.final_payload.sha256};r.state='awaiting_transform_decision';r.approvals.current='transform';bump();render()},1200);return{ok:true,review:r}}
  if(dec.type=='approve_transmit'||dec.type=='override_uninspected'){const s=step(dec.type=='approve_transmit'?'transmit':'uninspected_override');if(dec.type=='approve_transmit'&&r.proposal&&r.proposal.reinspection.state=='new_findings'&&step('transform').status!='declined')return err('reinspection_failed','Re-inspection did not pass. Nothing was sent.');if(dec.payload_sha256!==s.binds_to.payload_sha256)return err('hash_mismatch','The text changed since you approved. Nothing was sent.',false,'decision.payload_sha256');
   if(dec.type=='approve_transmit'){const missing=s.required_acknowledgements.filter(x=>!(dec.acknowledged_finding_ids||[]).includes(x));if(missing.length)return err('consent_required','Tick each item to confirm before sending.');}
@@ -93,6 +93,8 @@ function indicator(r){const s=k=>r.approvals.steps.find(x=>x.kind==k);
  let tc=t?.transmit_content,inferred=false;
  if(tc==null&&minor<1){inferred=true;const tr=s('transform');tc=(!r.proposal||tr?.status=='declined'||tr?.status=='not_required')?'original':'transformed'}
  if(tc==null)return `<div class="ws none" role="status"><span class="ws-k">${ic('alert','lg')} SEND CONTENT NOT STATED BY AEGIS</span><span class="ws-d">Aegis did not say which text would be sent. Do not approve; reject and retry.</span></div>`;
+ const ri=r.proposal?.reinspection?.state;
+ if(tc=='transformed'&&(r.state=='reinspecting'||ri=='pending'||ri=='new_findings'))return `<div class="ws none" role="status"><span class="ws-k">${ic('ban','lg')} NOTHING WILL BE SENT ${r.state=='reinspecting'||ri=='pending'?'WHILE RE-INSPECTION RUNS':'UNTIL THE EDIT IS FIXED'}</span><span class="ws-d">${r.state=='reinspecting'||ri=='pending'?'Approvals are on hold until Aegis finishes checking your edit.':'Aegis found new sensitive content in your edit. Edit the text again, or reject the request.'}</span></div>`;
  const hash=tc=='original'?r.content.original_sha256:(r.proposal?.final_payload?.sha256);
  const hh=(hash?`Hash: <code>${hash}</code>. `:'')+(inferred?'(Inferred: this daemon predates contract 1.1.) ':'');
  const same=tc=='transformed'&&r.proposal&&r.proposal.parts[0].text===r.content.parts[0].text;
@@ -137,13 +139,13 @@ function detail(r){
  const c=r.consequences;h+=`<div class="card flat"><h3 class="lbl" style="margin-bottom:6px">Consequences</h3>${c.if_approved.map(a=>`<p class="t-sec">If approved: sends to <b>${esc(a.transmits_to)}</b> (${a.locality}). ${a.items_shared} shared, ${a.items_changed} changed, ${a.items_kept_local} kept local${a.uninspected_parts?`, <b>${a.uninspected_parts} not inspected</b>`:''}.</p>`).join('')}<p class="t-sec">If rejected: nothing is sent. ${esc(c.if_rejected.client_receives.text)}</p></div>`;
  return h}
 function approvals(r){const cur=r.approvals.current,steps=r.approvals.steps;
- if(r.state=='reinspecting'||r.state=='transmitting')return `<div class="card elev"><div class="row" style="gap:10px"><span class="spin"></span><b>${r.state=='transmitting'?'Sending…':'Re-inspecting. Approvals are on hold.'}</b></div></div>`;
+ if(r.state=='transmitting')return `<div class="card elev"><div class="row" style="gap:10px"><span class="spin"></span><b>Sending…</b></div></div>`;
  const st1=steps.find(s=>s.kind=='transform'),st2=steps.find(s=>s.kind=='transmit'),stu=steps.find(s=>s.kind=='uninspected_override');
  const stat=s=>s?`<span class="badge b-${{granted:'ok',pending:'warn',declined:'neu',invalidated:'crit',denied:'crit',expired:'neu',not_required:'neu'}[s.status]}">${s.status.replace('_',' ')}</span>`:'';
  const ri=r.proposal?r.proposal.reinspection.state:'not_needed',tdone=!!st1&&['granted','declined','not_required'].includes(st1.status);
  const stp=[['Detected',true,false],['Transformation decided',tdone,false],[ri=='new_findings'?'Re-inspection failed':(ri=='pending'||r.state=='reinspecting')?'Re-inspecting':'Re-inspection clean',ri=='clean'||ri=='not_needed',ri=='new_findings'],['Send approved',!!st2&&st2.status=='granted',false]];
  const stepper=`<ol class="row wrap" style="list-style:none;padding:0;margin:10px 0 0;gap:16px">${stp.map((s,i)=>`<li class="step ${s[1]?'done':''}" style="${s[2]?'color:var(--crit)':''}"><span class="n" style="${s[2]?'border-color:var(--crit);color:var(--crit)':''}">${s[1]?ic('check'):s[2]?ic('x'):i+1}</span>${s[0]}</li>`).join('')}</ol>`;
- let b=`<div class="card elev"><div class="lbl">Approvals: each step is separate</div>${stepper}`;
+ let b=`<div class="card elev"><div class="lbl">Approvals: each step is separate</div>${stepper}${r.state=='reinspecting'?'<div class="row" style="gap:10px;margin-top:10px" role="status"><span class="spin"></span><b>Re-inspecting. Approvals are on hold.</b></div>':''}`;
  const clean=!r.proposal||['clean','not_needed'].includes(r.proposal.reinspection.state),ed=S.editing;
  const canEdit=!ed&&r.proposal&&(cur=='transform'||cur=='transmit');
  const lockWhy=ed?'Locked while you are editing. Save to re-inspect.':!clean?'Locked: re-inspection did not pass. Edit the text again.':'';
@@ -165,6 +167,9 @@ function send(dec){const r=D.reviews[S.sel];const res=decide(r.review_id,r.revis
 window.EXTRA_ACT=function(k,v,el){
  if(k!='rv')return prevAct?prevAct(k,v,el):false;
  const [a,x]=v.split(':'),r=D.reviews[S.sel];
+ if(!r||!['sel','t','decline','edit','save','s','ackf','ovack','unins','reject','expire','unreach','dismiss'].includes(a))return true;/* N2: ignore unknown or out-of-context actions */
+ const steps=r.approvals.steps,tx=steps.find(s=>s.kind=='transmit'),ov=steps.find(s=>s.kind=='uninspected_override');
+ if((a=='t'&&!(r.proposal&&r.approvals.current=='transform'))||(a=='decline'&&r.approvals.current!='transform')||(a=='edit'&&!r.proposal)||(a=='save'&&!document.getElementById('ed'))||(a=='s'&&!(tx&&tx.binds_to&&r.approvals.current=='transmit'))||(a=='unins'&&!(ov&&ov.binds_to&&r.approvals.current=='uninspected_override'))||((a=='dismiss')&&!isTerm(r)))return true;
  if(S.unreach&&a!='unreach'&&a!='sel'){S.banner={k:'crit',t:'Aegis is not running',p:'Decisions cannot be sent. Nothing was sent.'};render();return true}
  if(a=='sel'){S.sel=+x;S.editing=false;S.banner=null;S.ovAck=false}
  else if(a=='t')send({type:'approve_transform',proposal_id:r.proposal.proposal_id,proposal_version:r.proposal.proposal_version});
@@ -179,8 +184,10 @@ window.EXTRA_ACT=function(k,v,el){
  else if(a=='expire'){r.expires_at=iso(now())}
  else if(a=='unreach')S.unreach=!S.unreach;
  else if(a=='dismiss'){S.dismissed[r.review_id]=true;S.banner=null}
- render();return true};
+ render();
+ if(a=='t'||a=='decline'){/* N4: keep keyboard focus moving forward */const nx=document.querySelector('[data-act^="rv:ackf:"]')||document.querySelector('[data-act="rv:s"]:not([disabled])')||document.querySelector('[data-act="rv:edit"]:not([disabled])');nx&&nx.focus()}
+ return true};
 setInterval(()=>{D.reviews.forEach((r,i)=>{const s=secsLeft(r);if(s!=null){document.querySelectorAll(`[data-exp="${i}"]`).forEach(e=>e.textContent=mmss(s));
-  if(s==0&&!isTerm(r)&&!r._expiring){r._expiring=true;setTimeout(()=>{/* mock daemon confirms expiry, even while the user is editing */r.state='expired';r.expires_at=null;r.revision++;r.approvals.steps.forEach(x=>{if(x.status=='pending')x.status='expired'});r.approvals.current=null;if(D.reviews[S.sel]===r)S.editing=false;render()},1000)}}})},1000);
+  if(s==0&&!isTerm(r)&&!r._expiring){r._expiring=true;setTimeout(()=>{/* mock daemon confirms expiry, even while the user is editing */r.state='expired';r.expires_at=null;r.revision++;r.approvals.steps.forEach(x=>{if(x.status=='pending')x.status='expired'});r.approvals.current=null;if(D.reviews[S.sel]===r){if(S.editing)S.banner={k:'warn',t:'Your unsaved edit was discarded',p:'The request expired before you saved. Nothing was sent. Send the prompt again from your app.'};S.editing=false}render()},1000)}}})},1000);
 R.review=window.review;
 })();

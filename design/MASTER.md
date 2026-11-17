@@ -120,3 +120,13 @@ Regression checks were scripted in the browser against the fixed build (mock dae
 | D9 | Removed Google Fonts links; system font stack; no external requests | `performance` resource list contains no cross-origin entries; no horizontal overflow on any of the 15 screens at 1024 px (I could not identify the original 7 px element, so cannot say which change fixed it) |
 | README | States that `contrast.py` needs the CSS path | README updated |
 Not addressed: D10 (Rust workspace build on Windows GNU) is outside the design scope. B6 note (small muted text 3.8-4.4:1 by rough heuristic): the script measures `--text3` at 4.5:1 or better on card, bg and bg2; not re-measured on rendered pixels.
+
+## 7. QA verification 1 follow-ups (design/contract-v1.1)
+| ID | Fix | Evidence (scripted, mock daemon) |
+|---|---|---|
+| D9 | Tooltip bubble is `display:none` until hover/focus; the theme-toggle variant is right-aligned | scrollWidth equals viewport at 1024 px on all 15 screens |
+| N1 | `edit_proposal` timer returns if the review is already closed | Edit then expire during re-inspection: stays `expired` |
+| N3 | Banner reads NOTHING WILL BE SENT WHILE RE-INSPECTION RUNS / UNTIL THE EDIT IS FIXED when re-inspection is pending or failed | Edit adding an email: banner changes, send locked |
+| N4 | Focus moves to the first acknowledgement checkbox (else Approve and send) after approving the transformation; the stepper and spinner stay visible while re-inspecting | document.activeElement checked; stepper present during reinspecting |
+| N5 | A warning banner says the unsaved edit was discarded when the review expires while editing | Banner text present |
+| N2 | Unknown or out-of-context `rv:` actions are ignored | Injected actions leave state unchanged |
