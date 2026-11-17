@@ -1,0 +1,25 @@
+/* Simulation-specific styles; colours come from design tokens in ../assets/aegis.css */
+#sim-badge{margin-left:4px}
+.cmp{align-items:start}
+.pane h3{font-size:13px;margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pane .body{font:400 13px/1.7 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere}
+.pane .body del,.pane .body ins{font-family:var(--mono)}
+.finding{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;padding:12px 0;align-items:start}
+.finding + .finding{border-top:1px solid var(--border)}
+.finding .meta{color:var(--text2);font-size:13px}
+.steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}
+.step-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-md);padding:14px;display:flex;flex-direction:column;gap:8px}
+.step-card.done{border-color:var(--ok)}
+.step-card h3{font-size:14px;margin:0}
+.step-card p{margin:0;font-size:13px;color:var(--text2)}
+.ws{margin-top:16px}
+.stack-gap>*+*{margin-top:16px}
+.hash{white-space:nowrap}
+.sent-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;font:400 13px/1.6 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere;margin-top:8px}
+#result .card{margin-top:20px}
+@media (max-width:760px){
+  .cmp,.steps{grid-template-columns:minmax(0,1fr)}
+  .finding{grid-template-columns:minmax(0,1fr)}
+  textarea.input{font-size:16px}
+}
+mark.hl{color:inherit}
