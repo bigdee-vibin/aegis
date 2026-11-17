@@ -1,0 +1,18 @@
+[package]
+name = "aegis-detect-pii"
+description = "Deterministic PII detectors (stage 1): email, phone, card (Luhn), IBAN (mod 97), SSN, Aadhaar (Verhoeff), PAN."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+aegis-core = { workspace = true }
+regex = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

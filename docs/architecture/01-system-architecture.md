@@ -312,7 +312,7 @@ aegis/
 
 ## 12. Acceptance criteria → mechanism → test
 
-### 12.1 Canonical suite AT-01 … AT-18 (PRD §8; ADR-0021)
+### 12.1 Canonical suite AT-01 … AT-19 (PRD §8; ADR-0021)
 
 | AT | Criterion | Mechanism | Primary test | Legacy # |
 |---|---|---|---|---|
@@ -334,8 +334,9 @@ aegis/
 | AT-16 | Learning suggestions inactive until approved | Suggestions are data; activation is an explicit user command | Stub test at M7 (feature is P2) | new |
 | AT-17 | Audit storage holds no prompt or full-response content | Typed audit API; no text columns | Canary scan of DB and logs | 12 |
 | AT-18 | Unsupported websites show accurate coverage warning | Coverage tiers (ADR-0012) | Extension e2e on unsupported domain | 15 |
+| AT-19 | Guard separation: the inspecting model is never the called model, in every mode (LOCAL ONLY with Ollama uses a separate instance and context); identical configuration fails startup; instructions in content cannot change the guard verdict | Startup validation (S3.6a) + injection corpus | Startup test: guard == target refuses to start; verdict-stability test | new (PRD, ADR-0022) |
 
-Two legacy items are **not** in the AT list but remain required behaviours and are tracked in S7.1: tool-call arguments/results inspected (legacy 9, FR-INB-3) and zero outbound telemetry by default (legacy 16, NFR). Proposed to the PM as AT-19/AT-20.
+Two legacy items are **not** in the AT list but remain required behaviours and are tracked in S7.1: tool-call arguments/results inspected (legacy 9, FR-INB-3) and zero outbound telemetry by default (legacy 16, NFR). Proposed to the PM as AT-20/AT-21 (AT-19 is guard separation).
 
 ### 12.2 Legacy 16-item list (superseded; kept for traceability)
 

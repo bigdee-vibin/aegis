@@ -71,6 +71,7 @@ Priority = brief tier. "Dep" = prerequisites.
 | S3.4 | Ollama failure → `ProposeFallback`, never auto | P0 | S3.2 | Acceptance #7 |
 | S3.5 | OpenAI + OpenAI-compatible adapters (Chat + Responses wire) | P1 | S2.6 | Conformance suite vs recorded fixtures; unsupported-param errors preserved |
 | S3.6 | Local classifier Stage 2 (ONNX NER) behind `Classifier` trait; coverage report | P1 | S2.1 | Monotonic merge test; unavailable → coverage flag |
+| S3.6a | Guard-separation check (ADR-0022, FR-DET-9/10): at startup resolve the Stage-2 guard instance and the target model instance per mode; refuse to start if they are the same instance or share a session/context; budgets from S3.6 enforced by tests; instructions embedded in content must not change the guard verdict | P0 | S3.6, S3.1 | AT-19: configuring guard == target fails startup with a clear error; in LOCAL ONLY the guard and Ollama target run as separate instances; injection corpus leaves verdicts unchanged |
 | S3.7 | Provider credential vault (store/use; never exposed to clients) | P1 | S0.5 | No credential in any client-visible output |
 
 ### M4 — Slice 4: inbound, tools, injection, vault
