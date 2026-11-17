@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aegis Review Center simulation</title>
+<meta name="description" content="In-browser simulation of the Aegis Review Center flow. Toy pattern matching on fake sample data. No real detection engine, nothing leaves your browser.">
+<link rel="stylesheet" href="../assets/aegis.css">
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="stylesheet" href="demo.css">
+<script src="../assets/site.js"></script>
+</head>
+<body>
+<a href="#main" class="sr">Skip to content</a>
+<header class="site-h">
+  <div class="wrap">
+    <a class="brandmark" href="../">
+      <svg class="i xl" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.7 8.9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+      Aegis
+    </a>
+    <span class="badge b-warn" id="sim-badge">Simulation</span>
+    <nav aria-label="Primary">
+      <a href="../#status">Status</a>
+      <a href="./" aria-current="page">Demo</a>
+      <a href="../board/">Design board</a>
+      <a href="https://github.com/bigdee-vibin/aegis">Repository</a>
+      <button class="btn sm" id="theme-toggle" type="button" aria-label="Switch to light theme">Light theme</button>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+<div class="wrap" style="padding-block:28px">
+  <h1 style="font-size:clamp(26px,5vw,36px)">Review Center simulation</h1>
+  <div class="alert warn" role="note">
+    <svg class="i lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+    <div>
+      <div class="ttl">Simulation - no real data leaves your browser, no real detection engine</div>
+      <p>This page is not Aegis and does not protect anything. It runs a handful of toy regular expressions on fake sample formats to demonstrate the planned Review Center flow from the design board. A real engine is not built or measured yet, and this toy will miss things. Nothing is sent anywhere, saved or logged; text you type stays in this page and disappears when you close it.</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <h2 class="t-page" style="font-size:20px">1. Paste text to inspect</h2>
+    <div class="field" style="margin-top:12px">
+      <label for="inp">Prompt text (use fake data only)</label>
+      <textarea id="inp" class="input mono" rows="6" spellcheck="false" aria-describedby="inp-help"></textarea>
+      <span class="help" id="inp-help">Toy patterns: cloud-key-like IDs, <code>sk-</code> style tokens, GitHub-token-like strings, private key headers, JWT-shaped strings (all treated as Critical) and email addresses (Moderate). Please do not paste real secrets or personal data.</span>
+    </div>
+    <div class="row wrap" style="margin-top:12px">
+      <span class="lbl" id="samples-lbl">Load a sample:</span>
+      <div class="row wrap" role="group" aria-labelledby="samples-lbl" style="gap:8px">
+        <button class="btn sm" type="button" data-act="sample:email">Emails only</button>
+        <button class="btn sm" type="button" data-act="sample:key">Fake key</button>
+        <button class="btn sm" type="button" data-act="sample:mixed">Emails and fake key</button>
+        <button class="btn sm" type="button" data-act="sample:clean">Nothing matches</button>
+      </div>
+    </div>
+    <div class="row wrap" style="margin-top:16px">
+      <button class="btn primary" type="button" data-act="inspect">Inspect (simulated)</button>
+      <button class="btn ghost" type="button" data-act="clear">Clear everything</button>
+    </div>
+  </div>
+
+  <div id="live" class="sr" role="status" aria-live="polite"></div>
+  <div id="result" aria-label="Simulated review result"></div>
+
+  <section class="card flat" style="margin-top:24px" aria-labelledby="h-notsim">
+    <h2 class="t-section" id="h-notsim">What this simulation is not</h2>
+    <ul class="plain-list">
+      <li>Not the Aegis detection engine. The real design uses deterministic detectors with checksums and format rules, which are not yet verified. These toy patterns are simpler and weaker.</li>
+      <li>Not evidence of effectiveness. When nothing matches here, that says nothing about whether text is safe.</li>
+      <li>Not simulated: the 5-minute approval timeout, hash binding with a cryptographic hash (this page uses a short non-cryptographic checksum for display), network egress control, response inspection, audit logging, coverage tiers.</li>
+      <li>Blocked-critical state: the design gives no approve, edit or override control. This simulation follows that rule.</li>
+    </ul>
+    <p class="help" style="margin-top:8px">Design rules come from <a href="../board/">the design board</a> (see MASTER.md in <a href="https://github.com/bigdee-vibin/aegis/blob/design/board-v1/design/MASTER.md">the repository</a>).</p>
+  </section>
+</div>
+</main>
+<footer class="site-f"><div class="wrap"><p>Aegis is pre-release. This simulation makes no network requests after the page files load and stores nothing except your theme choice.</p></div></footer>
+<script src="demo.js"></script>
+</body>
+</html>

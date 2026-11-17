@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aegis AI Firewall - pre-release project site</title>
+<meta name="description" content="Aegis is a planned local-first privacy firewall for AI use. This site shows the project's design, an in-browser simulation, and its honest status: pre-release, not a working firewall.">
+<link rel="stylesheet" href="assets/aegis.css">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/site.js"></script>
+</head>
+<body>
+<a href="#main" class="sr">Skip to content</a>
+<header class="site-h">
+  <div class="wrap">
+    <a class="brandmark" href="./">
+      <svg class="i xl" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.7 8.9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+      Aegis
+    </a>
+    <nav aria-label="Primary">
+      <a href="#status">Status</a>
+      <a href="#how">How it works</a>
+      <a href="#scope">Scope</a>
+      <a href="#tiers">Coverage</a>
+      <a href="demo/">Demo</a>
+      <a href="board/">Design board</a>
+      <button class="btn sm" id="theme-toggle" type="button" aria-label="Switch to light theme">Light theme</button>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+<section aria-labelledby="h-vision">
+  <div class="wrap">
+    <p class="eyebrow">Pre-release project</p>
+    <h1 id="h-vision">A privacy firewall for the AI era</h1>
+    <p class="lede">Aegis is a planned local-first layer that controls what personal and sensitive information reaches AI providers, inspects what comes back, and routes requests between local and cloud models with privacy taking precedence.</p>
+
+    <div class="status-panel" id="status" role="region" aria-labelledby="h-status">
+      <h2 id="h-status">
+        <svg class="i lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+        Status
+      </h2>
+      <p class="big">Pre-release. Design prototype and early gateway slice. Not a working firewall yet. No protection is claimed.</p>
+      <p class="prose" style="margin-top:8px">Do not rely on Aegis to protect any data today. Nothing below has been measured for effectiveness. Status as of 2026-11-17, copied by hand from the repository's own audit, PRD and commit notes; this page does not update itself.</p>
+
+      <div class="cols">
+        <div>
+          <h3>What exists</h3>
+          <ul>
+            <li>Architecture package: system design, threat model, API contracts, backlog, 20+ decision records (ADRs).</li>
+            <li>PRD v1.0 <em>draft</em> with requirement IDs and a 19-test acceptance suite (on a branch, awaiting owner review).</li>
+            <li>A clickable design board (coded prototype, sample data only).</li>
+            <li>A Rust workspace scaffold and an early gateway slice for blocking secrets (on a branch, not released).</li>
+            <li>A test kit with mock cloud and mock Ollama servers (on a branch).</li>
+          </ul>
+        </div>
+        <div>
+          <h3>What is not verified</h3>
+          <ul>
+            <li>All 19 acceptance tests are recorded as <strong>Not started</strong> in the PRD. None counts as passed.</li>
+            <li>The gateway slice was run locally once (51 tests, on a scratch copy with different dependency pins that are not in the repo). MSVC build, CI on Windows, macOS and Linux, and <code>cargo-deny</code> are unverified.</li>
+            <li>Detection recall and precision: never measured.</li>
+            <li>Feasibility spikes (encrypted storage, browser Native Messaging, site interception): not run.</li>
+            <li>Accessibility of the design board: contrast measured by script; no assistive-technology audit.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>What does not exist</h3>
+          <ul>
+            <li>A released build, installer or download.</li>
+            <li>A browser extension.</li>
+            <li>A desktop app or credential vault.</li>
+            <li>LOCAL ONLY enforcement, routing, response inspection, reconstruction.</li>
+            <li>Any site or app that is actually protected.</li>
+          </ul>
+        </div>
+      </div>
+      <p class="prose" style="margin-top:14px">Primary sources: <a href="https://github.com/bigdee-vibin/aegis/blob/main/docs/status/2026-11-17-initial-audit.md">initial audit</a>, <a href="https://github.com/bigdee-vibin/aegis/blob/docs/prd-v1/docs/product/PRD.md">PRD draft (section 8, acceptance suite)</a>, and the commit notes on the <a href="https://github.com/bigdee-vibin/aegis/commits/m0-m1-scaffold">m0-m1-scaffold</a> branch.</p>
+    </div>
+
+    <div class="btns">
+      <a class="btn primary lg" href="demo/">Try the simulation</a>
+      <a class="btn lg" href="board/">Open the design board</a>
+      <a class="btn lg" href="https://github.com/bigdee-vibin/aegis">View the repository</a>
+    </div>
+  </div>
+</section>
+
+<section id="how" aria-labelledby="h-how">
+  <div class="wrap">
+    <h2 id="h-how">How it is designed to work</h2>
+    <p class="prose">This is the intended flow from the architecture documents. It describes design intent, not shipped behaviour. Every step below is either unbuilt or unverified.</p>
+    <ol class="flow-steps">
+      <li><h3>Your request</h3><p>An application or supported browser site sends a prompt, with an API key or personal data possibly inside it.</p></li>
+      <li><h3>Local gateway</h3><p>A background process on your device receives it first. Applications opt in by pointing their OpenAI-compatible base URL at it.</p></li>
+      <li><h3>Inspect</h3><p>Deterministic detectors (key formats, private keys, emails, checksums) run first. A small local classifier is planned as a later, optional layer that can only raise severity.</p></li>
+      <li><h3>Decide</h3><p>Policy picks notify, review or block. Critical secrets are blocked by a mandatory rule no profile can relax.</p></li>
+      <li><h3>Review, two approvals</h3><p>You see original and proposed text side by side. You approve the change, then separately approve sending that exact text.</p></li>
+      <li><h3>Single egress point</h3><p>Only content carrying an approval capability may leave. Responses are buffered and inspected before release.</p></li>
+    </ol>
+    <p class="prose" style="margin-top:16px">Principles recorded in the design: fail closed when inspection fails; never modify your content without approval; the audit log holds metadata only; no telemetry; LOCAL ONLY never falls back to cloud silently.</p>
+  </div>
+</section>
+
+<section id="scope" aria-labelledby="h-scope">
+  <div class="wrap">
+    <h2 id="h-scope">Confirmed scope (v1.0 plan)</h2>
+    <p class="prose">Taken from the PRD draft's confirmed decisions. A plan, not a commitment of dates.</p>
+    <div class="cards">
+      <div class="card"><h3>In scope</h3><ul class="plain-list">
+        <li>Individual AI users</li>
+        <li>Local OpenAI-compatible gateway (chat completions first)</li>
+        <li>Chrome-family extension with a local companion</li>
+        <li>Secret and personal-data detection, review, two approvals</li>
+        <li>LOCAL ONLY mode with Ollama</li>
+        <li>Metadata-only audit, zero telemetry</li>
+        <li>Windows, macOS, Linux (as planned in ADR-0020)</li>
+      </ul></div>
+      <div class="card"><h3>Not in v1.0</h3><ul class="plain-list">
+        <li>Team or enterprise management</li>
+        <li>A hosted Aegis cloud service</li>
+        <li>Universal website coverage</li>
+        <li>System-wide traffic interception</li>
+        <li>Image and file inspection (blocked on cloud routes instead)</li>
+        <li>Learning engine, token optimiser, desktop-app connectors</li>
+      </ul></div>
+      <div class="card"><h3>Stated limits</h3><ul class="plain-list">
+        <li>No protection against malware running as the same OS user</li>
+        <li>No guarantee that every sensitive item is detected</li>
+        <li>Unsupported sites and formats are not inspected</li>
+        <li>Nothing is protected before login or while the background process is stopped</li>
+      </ul></div>
+    </div>
+  </div>
+</section>
+
+<section id="tiers" aria-labelledby="h-tiers">
+  <div class="wrap">
+    <h2 id="h-tiers">Coverage tiers: what protection would mean</h2>
+    <p class="prose">Websites are not under Aegis control, so the design labels coverage per integration instead of claiming blanket protection (ADR-0012). The interface vocabulary is <strong>Protected</strong>, <strong>Partially protected</strong> and <strong>Not protected</strong>. <strong>Today every integration is Planned and none is Protected.</strong></p>
+    <div class="tbl-scroll">
+    <table class="tiers">
+      <caption class="sr">Planned integration coverage tiers</caption>
+      <thead><tr><th scope="col">Tier</th><th scope="col">Meaning</th><th scope="col">Limit</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">A - Gateway</th><td>Apps that route through the local gateway. Requests and responses can be held and inspected before release.</td><td>Only applications you configure to use it. Apps that bypass it are Not protected.</td></tr>
+        <tr><th scope="row">B - Adapter with interception</th><td>A curated site adapter that can hold responses via network interception in the browser.</td><td>Fragile: site changes can break it. A failed canary downgrades the label. Legal review pending.</td></tr>
+        <tr><th scope="row">C - DOM only</th><td>Outbound checked when you submit in the composer. Inbound is detect-only after it is already rendered.</td><td>Cannot hold or rewrite responses. Labelled detect-only.</td></tr>
+        <tr><th scope="row">D - Unsupported</th><td>Any other site or app.</td><td>Shown as Not protected with a persistent warning.</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</section>
+
+<section id="explore" aria-labelledby="h-explore">
+  <div class="wrap">
+    <h2 id="h-explore">Explore</h2>
+    <div class="cards">
+      <div class="card"><h3>Review Center simulation</h3><p>Paste text, see toy pattern matches on fake sample formats, compare original and proposed text, step through two separate approvals. Everything stays in your browser.</p><div class="btns"><a class="btn primary" href="demo/">Open simulation</a></div></div>
+      <div class="card"><h3>Full design board</h3><p>The coded design prototype: design system, states, onboarding, flows and handoff notes. Sample data only.</p><div class="btns"><a class="btn" href="board/">Open board</a></div></div>
+      <div class="card"><h3>Source documents</h3><p>Everything is public. Some documents live on branches that are not yet merged.</p>
+        <ul class="plain-list">
+          <li><a href="https://github.com/bigdee-vibin/aegis">Repository</a></li>
+          <li><a href="https://github.com/bigdee-vibin/aegis/blob/docs/prd-v1/docs/product/PRD.md">PRD v1.0 draft</a> (branch docs/prd-v1)</li>
+          <li><a href="https://github.com/bigdee-vibin/aegis/tree/main/docs/adr">ADRs</a> (<a href="https://github.com/bigdee-vibin/aegis/tree/docs/prd-v1/docs/adr">with ADR-0022 on docs/prd-v1</a>)</li>
+          <li><a href="https://github.com/bigdee-vibin/aegis/blob/main/docs/security/02-threat-model.md">Threat model</a></li>
+        </ul></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="site-f">
+  <div class="wrap">
+    <p>Aegis is a pre-release project. This static site loads no external scripts, fonts or trackers, and collects nothing. The only thing stored in your browser is your light or dark theme choice, if storage is available.</p>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,57 @@
+/* Site layer on top of aegis.css (design tokens). Static, no external resources. */
+html{scroll-padding-top:72px}
+body{font-size:16px;line-height:1.6;min-height:100vh}
+.wrap{width:min(1080px,100%);margin-inline:auto;padding-inline:24px}
+.sr:focus{position:fixed;left:12px;top:12px;width:auto;height:auto;clip:auto;overflow:visible;background:var(--accent);color:var(--accent-ink);padding:10px 14px;border-radius:var(--r-md);z-index:50;font-weight:600}
+.site-h{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--border)}
+.site-h .wrap{display:flex;align-items:center;gap:16px;min-height:60px;flex-wrap:wrap;padding-block:8px}
+.brandmark{display:inline-flex;align-items:center;gap:10px;font-weight:650;letter-spacing:-.01em;color:var(--text);text-decoration:none;font-size:17px}
+.brandmark svg{color:var(--accent)}
+.site-h nav{margin-left:auto;display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.site-h nav a{color:var(--text2);text-decoration:none;padding:8px 10px;border-radius:var(--r-md);font-size:14px;min-height:36px;display:inline-flex;align-items:center}
+.site-h nav a:hover{color:var(--text);background:var(--elev)}
+.site-h nav a[aria-current="page"]{color:var(--text);box-shadow:inset 0 -2px 0 var(--accent)}
+main{display:block}
+section{padding-block:40px}
+section + section{border-top:1px solid var(--border)}
+h1{font-size:clamp(30px,6vw,46px);line-height:1.08;letter-spacing:-.025em;font-weight:650;margin:0 0 16px}
+h2{font-size:clamp(22px,4vw,28px);line-height:1.2;letter-spacing:-.015em;font-weight:620;margin:0 0 12px}
+h3{font-size:16px;font-weight:600;margin:0 0 6px}
+.lede{font-size:clamp(17px,2.5vw,20px);color:var(--text2);max-width:62ch}
+.prose{max-width:72ch;color:var(--text2)}
+.prose strong{color:var(--text)}
+.eyebrow{font:600 12px var(--font);letter-spacing:.08em;text-transform:uppercase;color:var(--accent-text);margin-bottom:10px}
+.status-panel{border:2px solid var(--warn);background:var(--warn-soft);border-radius:var(--r-lg);padding:20px 24px;margin-top:24px}
+.status-panel h2{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+.status-panel .big{font-size:clamp(17px,2.6vw,20px);font-weight:600;color:var(--text)}
+.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:16px}
+.cols>div{background:var(--card);border:1px solid var(--border);border-radius:var(--r-md);padding:16px}
+.cols ul,.plain-list{margin:8px 0 0;padding-left:20px;color:var(--text2)}
+.cols li,.plain-list li{margin-bottom:6px}
+.flow-steps{list-style:none;margin:20px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;counter-reset:s}
+.flow-steps li{background:var(--card);border:1px solid var(--border);border-radius:var(--r-md);padding:14px 16px;counter-increment:s;position:relative}
+.flow-steps li::before{content:counter(s);display:inline-flex;width:24px;height:24px;border-radius:50%;background:var(--accent-soft);color:var(--accent-text);font:600 12px var(--font);align-items:center;justify-content:center;margin-bottom:8px}
+.flow-steps p{color:var(--text2);font-size:14px;margin:0}
+.tiers{width:100%;border-collapse:collapse;margin-top:16px;font-size:14px}
+.tiers th,.tiers td{text-align:left;vertical-align:top;padding:10px 12px;border-bottom:1px solid var(--border)}
+.tiers th{color:var(--text);font-weight:600}
+.tiers td{color:var(--text2)}
+.tbl-scroll{overflow-x:auto}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:16px}
+.cards .card{padding:18px}
+.cards p{color:var(--text2);font-size:14px;margin:0}
+.btns{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+.site-f{border-top:1px solid var(--border);padding-block:28px;color:var(--text2);font-size:14px}
+.site-f a{color:var(--accent-text)}
+a:not(.btn):not(.brandmark):hover{text-decoration-thickness:2px}
+@media (max-width:760px){
+  .site-h{position:static}
+  .wrap{padding-inline:16px}
+  .cols{grid-template-columns:minmax(0,1fr)}
+  .site-h nav{margin-left:0;width:100%}
+  .site-h nav a{min-height:44px}
+  .tiers th,.tiers td{padding:8px}
+  section{padding-block:28px}
+  .status-panel{padding:16px}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
