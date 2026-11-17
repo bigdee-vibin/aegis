@@ -1,6 +1,6 @@
 /* Aegis design tokens + components. Dark default, light via [data-theme="light"]. */
 :root,[data-theme="dark"]{
-  --bg:#0B1118; --bg2:#111B27; --card:#151F2B; --elev:#1B2735; --border:#293747; --border-strong:#3A4D62;
+  --bg:#0B1118; --bg2:#111B27; --card:#151F2B; --elev:#1B2735; --border:#293747; --border-strong:#3A4D62; --edge:#6F8299;
   --accent:#2DD4BF; --accent-ink:#04201C; --accent-soft:rgba(45,212,191,.12); --accent-text:#2DD4BF;
   --text:#F1F5F9; --text2:#94A3B8; --text3:#7B8CA1;
   --warn:#FBBF24; --warn-soft:rgba(251,191,36,.12); --crit:#F87171; --crit-soft:rgba(248,113,113,.12);
@@ -10,7 +10,7 @@
   --scrim:rgba(5,9,14,.62); color-scheme:dark;
 }
 [data-theme="light"]{
-  --bg:#F4F6F9; --bg2:#EBEFF4; --card:#FFFFFF; --elev:#F7F9FB; --border:#D3DBE5; --border-strong:#A9B6C5;
+  --bg:#F4F6F9; --bg2:#EBEFF4; --card:#FFFFFF; --elev:#F7F9FB; --border:#D3DBE5; --border-strong:#A9B6C5; --edge:#708096;
   --accent:#0F766E; --accent-ink:#FFFFFF; --accent-soft:rgba(15,118,110,.09); --accent-text:#0B6159;
   --text:#0F172A; --text2:#475569; --text3:#5B6B80;
   --warn:#8A5300; --warn-soft:rgba(180,110,0,.12); --crit:#B42318; --crit-soft:rgba(180,35,24,.09);
@@ -218,3 +218,102 @@ a.btn{text-decoration:none}
   .page{padding-bottom:96px} .g2,.g3,.g4,.cmp{grid-template-columns:1fr}
   .topbar{padding-inline:16px}
 }
+
+/* ===== Apple-like refinement layer =====
+   System font first, translucent materials, soft elevation instead of hairline boxes,
+   larger radii, sheet-style dialogs, scroll-edge fade, size-specific tracking. */
+:root{
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI",system-ui,Inter,sans-serif;
+  --font-display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI Variable Display","Segoe UI",system-ui,Inter,sans-serif;
+  --r-sm:8px; --r-md:12px; --r-lg:18px;
+  --mat-side:rgba(17,27,39,.62); --mat-bar:rgba(11,17,24,.66); --mat-sheet:rgba(27,39,53,.82);
+  --soft:0 0 0 .5px rgba(255,255,255,.06),0 1px 2px rgba(0,0,0,.25),0 6px 20px rgba(0,0,0,.18);
+  --sheet-shadow:0 0 0 .5px rgba(255,255,255,.12),0 24px 70px rgba(0,0,0,.5);
+}
+[data-theme="light"]{
+  --mat-side:rgba(235,239,244,.72); --mat-bar:rgba(244,246,249,.72); --mat-sheet:rgba(255,255,255,.86);
+  --soft:0 0 0 .5px rgba(15,23,42,.08),0 1px 2px rgba(15,23,42,.05),0 6px 20px rgba(15,23,42,.06);
+  --sheet-shadow:0 0 0 .5px rgba(15,23,42,.12),0 24px 70px rgba(15,23,42,.22);
+}
+body{font-family:var(--font);font-size:14px;line-height:1.5}
+.t-display,.t-page,.t-section,.brand,h1,h2{font-family:var(--font-display)}
+.t-display{letter-spacing:-.03em;font-weight:700} .t-page{letter-spacing:-.022em;font-weight:650;font-size:24px}
+.t-section{letter-spacing:-.01em;font-weight:600} .t-meta{letter-spacing:.015em}
+/* Cards: soft elevation, hairline only as a whisper */
+.card,.card.flat{border:0;box-shadow:var(--soft);border-radius:var(--r-lg)}
+.card.elev{background:var(--elev)}
+.pane{border:0;background:var(--bg2);border-radius:var(--r-md)}
+.cmp .pane[style*="accent"]{box-shadow:0 0 0 1.5px var(--accent)}
+.alert{border-radius:var(--r-md)}
+/* Controls: continuous-corner feel, taller targets */
+.btn{min-height:38px;border-radius:10px;border-color:transparent;background:var(--elev);box-shadow:0 0 0 .5px var(--border-strong);font-weight:500;letter-spacing:-.005em}
+.btn.primary{box-shadow:none} .btn.danger,.btn.warn{box-shadow:none}
+.btn.lg{min-height:46px;border-radius:12px}
+.btn.sm{min-height:32px;border-radius:8px}
+.input,.select{border:0;box-shadow:0 0 0 .5px var(--border-strong);border-radius:10px;min-height:38px}
+.input:focus,.input.is-focus{box-shadow:0 0 0 3px var(--accent-soft),0 0 0 1.5px var(--accent);outline:none}
+.switch{width:46px;height:28px;border-radius:14px;border:0;box-shadow:inset 0 0 0 .5px var(--border-strong)}
+.switch::after{width:24px;height:24px;top:2px;left:2px;box-shadow:0 1px 3px rgba(0,0,0,.35)}
+.switch[aria-checked="true"]::after{transform:translateX(18px)}
+.switch{transition:background .2s var(--ease)} .switch::after{transition:transform .28s cubic-bezier(.3,1.3,.5,1)}
+.seg{border:0;background:var(--bg2);border-radius:10px;padding:3px}
+.seg button{border-radius:8px}.seg button[aria-pressed="true"]{box-shadow:0 1px 3px rgba(0,0,0,.25);background:var(--elev)}
+.badge{border-radius:999px;font-weight:600}
+/* Translucent materials: sidebar and toolbar, content scrolls under */
+.side{background:var(--mat-side);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);border-right:.5px solid var(--border)}
+.topbar{background:var(--mat-bar);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border-bottom:0;box-shadow:0 .5px 0 var(--border)}
+.nav{border-radius:10px;font-weight:500}
+.nav[aria-current="page"]{background:var(--accent-soft)}
+.nav[aria-current="page"]{font-weight:600}
+.navgrp{letter-spacing:.02em;text-transform:none;font-size:12px;font-weight:600}
+/* Scroll-edge fade under the toolbar instead of a hard divider */
+.topbar::after{content:"";position:absolute;left:0;right:0;top:100%;height:20px;background:linear-gradient(var(--bg),transparent);opacity:.7;pointer-events:none}
+/* Sheets: translucent, sheet-shadow, enter from the top like a macOS sheet; scrim dims, does not blur text-heavy content */
+.scrim{align-items:flex-start;padding-top:12vh;background:var(--scrim)}
+.dialog{background:var(--mat-sheet);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);border:0;box-shadow:var(--sheet-shadow);border-radius:20px;transform-origin:top center;animation:sheet .32s cubic-bezier(.2,.9,.25,1)}
+@keyframes sheet{from{opacity:0;transform:translateY(-14px) scale(.97)}}
+.dialog h2{font-size:18px;letter-spacing:-.015em}
+.drawer{background:var(--mat-sheet);backdrop-filter:blur(40px);border:0;box-shadow:var(--sheet-shadow)}
+.toast{background:var(--mat-sheet);backdrop-filter:blur(30px);border:0;box-shadow:var(--sheet-shadow);border-radius:14px}
+.popup{border:0;box-shadow:var(--sheet-shadow);border-radius:18px;background:var(--mat-sheet);backdrop-filter:blur(40px)}
+.tip::after{background:var(--mat-sheet);backdrop-filter:blur(20px);border:0;box-shadow:var(--soft)}
+.queue-item{border-radius:12px}.queue-item[aria-current="true"]{border-color:transparent;background:var(--accent-soft)}
+.table td,.table th{border-bottom:.5px solid var(--border)} .list>*+*{border-top:.5px solid var(--border)}
+.page{gap:24px}.card{padding:28px}.card.flat{padding:20px}
+/* Vibrancy: heavier secondary text on materials */
+.side .nav,.topbar .t-meta{font-weight:500}
+@media (prefers-reduced-transparency:reduce){
+  .side,.topbar,.dialog,.drawer,.toast,.popup,.tip::after{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--card)}
+}
+@media (prefers-reduced-motion:reduce){.dialog{animation:none}.switch::after{transition:none}}
+
+/* Non-text contrast (WCAG 1.4.11): control edges use --edge (>=3:1), decorative hairlines keep --border */
+.input,.select{box-shadow:0 0 0 1px var(--edge)}
+.input:hover{box-shadow:0 0 0 1px var(--text2)}
+.switch{box-shadow:inset 0 0 0 1.5px var(--edge)}
+.switch::after{background:var(--text2)}
+.btn{box-shadow:0 0 0 1px var(--edge)} .btn.primary,.btn.danger,.btn.warn{box-shadow:none}
+.check input{outline-color:var(--edge)}
+
+/* "What will be sent" indicator: icon + capitalised text + colour, never colour alone */
+.ws{display:flex;flex-direction:column;gap:4px;padding:14px 18px;border-radius:var(--r-md);border:2px solid var(--border-strong)}
+.ws-k{display:flex;gap:10px;align-items:center;font-weight:700;letter-spacing:.02em;font-size:14px}.ws-d{font-size:13px;color:var(--text2)}
+.ws.xform{border-color:var(--accent);background:var(--accent-soft)}.ws.xform .ws-k{color:var(--accent-text)}
+.ws.orig{border-color:var(--crit);background:var(--crit-soft)}.ws.orig .ws-k{color:var(--crit)}
+.ws.none{border-style:dashed;background:var(--bg2)}.ws.done{border-color:var(--ok);background:var(--ok-soft)}.ws.done .ws-k{color:var(--ok)}
+sup{font-size:10px}
+.table td .mono,.table td.mono{white-space:nowrap}
+/* Narrow-layout fixes (found by 375 px overflow measurement) */
+.split>*,.hero>*,.grid>*,.cmp>*,.main,.page>*{min-width:0}
+.popup{width:min(360px,100%)}
+@media (max-width:1100px){.split{grid-template-columns:minmax(0,1fr)!important}}
+@media (max-width:760px){
+  .btn,.btn.sm,.seg button,.tab,.switch{min-height:44px}
+  .switch{min-height:28px}
+  .li{flex-wrap:wrap}
+  [style*="width:300px"],[style*="width:130px"],[style*="width:120px"]{width:100%!important}
+  .grid[style*="repeat(5"]{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .ws-k{align-items:flex-start;font-size:13px}
+  .page{padding-inline:16px}
+}
+@media (max-width:760px){.topbar{gap:8px;padding-block:10px}.topbar .t-page{font-size:18px}.topbar .b-neu{display:none}}
