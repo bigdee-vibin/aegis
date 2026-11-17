@@ -322,3 +322,7 @@ sup{font-size:10px}
 .tip::after{display:none}
 .tip:hover::after,.tip:focus-visible::after,.tip.show::after{display:block}
 .tip.end::after{left:auto;right:0;transform:none}
+
+/* Skip link: off-screen until focused (hash routing means href must not navigate) */
+.skip{position:absolute;left:8px;top:-64px;background:var(--accent);color:var(--accent-ink);padding:10px 16px;border-radius:10px;z-index:100;font-weight:600;text-decoration:none}
+.skip:focus{top:8px}
