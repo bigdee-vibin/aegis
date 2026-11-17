@@ -1,0 +1,13 @@
+[package]
+name = "aegis-daemon"
+description = "Aegis Core daemon: composition root. Skeleton in M0."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+
+[lints]
+workspace = true

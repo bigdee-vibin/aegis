@@ -1,0 +1,33 @@
+# cargo-deny policy. UNVERIFIED until first CI run (cargo-deny was not available when scaffolded).
+[advisories]
+yanked = "deny"
+
+[licenses]
+allow = [
+    "Apache-2.0",
+    "MIT",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "CC0-1.0",
+    "Unicode-3.0",
+]
+confidence-threshold = 0.8
+
+[bans]
+multiple-versions = "warn"
+# ADR-0006: only aegis-egress may depend on a general outbound HTTP client.
+deny = [
+    { crate = "reqwest", wrappers = ["aegis-egress"] },
+    { crate = "ureq", wrappers = ["aegis-egress"] },
+    { crate = "isahc", wrappers = ["aegis-egress"] },
+    { crate = "surf", wrappers = ["aegis-egress"] },
+    { crate = "attohttpc", wrappers = ["aegis-egress"] },
+    { crate = "curl", wrappers = ["aegis-egress"] },
+    { crate = "hyper-tls", wrappers = ["aegis-egress"] },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"

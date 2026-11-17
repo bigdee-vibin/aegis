@@ -1,0 +1,14 @@
+[package]
+name = "aegis-policy"
+description = "Deterministic policy engine. Depends only on aegis-core: no I/O, no AI, no clock."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+aegis-core = { workspace = true }
+
+[lints]
+workspace = true
