@@ -6,6 +6,7 @@ members = [
     "crates/aegis-detect-secrets",
     "crates/aegis-inspect",
     "crates/aegis-audit",
+    "crates/aegis-approval",
     "crates/aegis-gateway",
     "crates/aegis-egress",
     "crates/aegis-testkit",
@@ -26,6 +27,7 @@ regex = "1"
 base64 = "0.22"
 unicode-normalization = "0.1"
 sha2 = "0.10"
+hmac = "0.12"
 subtle = "2"
 axum = "0.8"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "signal", "io-util", "sync", "time"] }
