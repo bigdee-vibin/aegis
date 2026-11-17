@@ -16,9 +16,16 @@ Status date: 2026-11-17. Scope: design board prototype in `design/`. Sample data
 - **Targets:** >=36 px desktop; >=44 px at <=760 px.
 - **Motion:** short, springy only for toggles/sheets; `prefers-reduced-motion`, `prefers-reduced-transparency` and `prefers-contrast` handled in CSS.
 
-## 2. Review Center data (PROVISIONAL)
-Interim PRD-based field set, to be replaced by `docs/architecture/03-api-contracts.md` when published: finding{category, severity, location, confidence, reason}, original, proposed, diff, approvalKind{transform|transmit}, contentHash, coverageTier, uninspected, expiresAt, state{pending, edited-reinspecting, approved-transform, approved-transmit, rejected, expired, blocked}.
-Display-only placeholders NOT in the contract: request `id`, `app` name. Design assumptions: 5-minute timeout, 30-second reject undo, the sample hash (non-cryptographic in the prototype), word-level diff.
+## 2. Review Center data: contract_version 1 (real)
+Source: `docs/architecture/03-api-contracts.md` section 10 (branch `m0-m1-scaffold`, PR #3). `design/review.js` renders `ReviewRequest` snapshots as delivered and sends `review.decide` commands carrying `revision`, `proposal_version` and `payload_sha256`. The UI does not compute severity, risk, diff, hash, coverage or approval requirements (10.1).
+`review.js` contains a **mock daemon** (clearly separated, not product logic) that emits contract-shaped sample snapshots and answers decisions, including `stale_revision`, `hash_mismatch`, `consent_required`, `proposal_superseded`. Its hashes are fake (not SHA-256), and its diff builder is a toy.
+Rendered: all `ReviewState` values used by the samples, coverage label verbatim, tier, limitations, uninspected parts, `contextual_check_skipped_notice`, route preview (locality, provider, model, explanation, considered), findings (category/subtype, risk_level, confidence band, handling, mandatory, approvable), proposal parts + diff ops + changes + preservation + reinspection + reconstruction, approval steps with strength and `required_acknowledgements`, uninspected override, consequences and remediation, timeout from `expires_at` (zero is treated as expired only after the daemon confirms), content cleared on terminal states (I6), daemon-unreachable UI-local state.
+Not rendered or not covered: `direction: tool_call` (P1), `awaiting_tool_call_decision`, `review.get_content` paging for truncated parts, malformed-message state, `cancelled`/`failed` samples.
+**Assumptions needing architecture confirmation:**
+1. The contract has no explicit "will send original or transformed" field. The UI infers it from the transform step (`declined`/`not_required` or no proposal = original; otherwise transformed). Proposed: a field such as `transmit_content: 'original'|'transformed'`.
+2. The contract has no hash of the original text (the transmit step `binds_to` carries it after a decline). The UI only displays what `binds_to` provides.
+3. `server_time` skew handling: the prototype assumes client and mock clocks agree.
+4. Reject undo (30 s) is NOT in the contract and was removed from the Review Center.
 
 ## 3. Measured contrast (WCAG 2.2, computed by `tools/contrast.py`)
 Method: relative luminance per WCAG; translucent tints are alpha-blended over the card colour. Text needs 4.5:1; focus ring and control edges need 3:1 (1.4.11).
@@ -82,7 +89,7 @@ Fix made during measurement: control borders originally used `--border-strong` (
 ## 4. Per-screen status
 | Screen | Built | Browser-checked 1440 | Contrast-measured (tokens) | 375 px checked |
 |---|---|---|---|---|
-| Review Center (v2) | yes | yes + state-machine test | yes | yes (no overflow) |
+| Review Center (contract v1, mock daemon) | yes | yes + scripted state-machine test (approve, edit, ack, hash, override, expiry) | tokens only | yes, all 6 sample reviews, no overflow, targets >=44 px |
 | Overview, Inspector, Profiles, Router | yes | yes | yes | yes (no overflow) |
 | Analytics, Integrations, Settings | yes | yes | yes | yes (no overflow) |
 | States, Extension popup, Onboarding, Flows, Board, System, Handoff | yes | yes | yes | yes (no overflow) |
