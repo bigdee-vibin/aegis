@@ -1,10 +1,33 @@
-//! Test helpers (story S0.3). Grows with the acceptance suite.
+//! Test helpers (story S0.3).
+//!
+//! - [`RequestCounter`] and [`find_canaries`]: counting and content-leak checks.
+//! - [`MockServer`]: a loopback HTTP server that stands in for a cloud provider
+//!   or Ollama, records exactly what it receives, and can misbehave on demand.
+//! - [`ConnectionTripwire`]: a loopback listener standing in for "the
+//!   internet"; any TCP connection to it is an outbound attempt.
+//! - [`http`]: a tiny HTTP/1.1 client for tests (the workspace bans general
+//!   HTTP client crates outside `aegis-egress`).
+//!
+//! # What this does and does not prove
+//!
+//! Pointing a provider at a mock or tripwire proves that *Aegis's own routing
+//! and guard logic* sends nothing to a provider it should not. It cannot catch
+//! a stray socket opened by unrelated code to an address nobody configured.
+//! OS-level deny harnesses (Linux network namespace, Windows firewall rule,
+//! macOS pf) need elevation and are tracked separately as S0.3b.
+
+mod canary;
+pub mod http;
+mod server;
+
+pub use canary::{find_canaries, sha256_hex};
+pub use server::{Behaviour, ConnectionTripwire, MockServer, RecordedRequest};
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
 /// Counts calls reaching a mock upstream. Acceptance tests assert it stays zero
-/// when a request must not leave the machine (AT: #1, #4, #6, #7).
+/// when a request must not leave the machine (AT-01, AT-05, AT-07, AT-08).
 #[derive(Debug, Clone, Default)]
 pub struct RequestCounter(Arc<AtomicUsize>);
 
@@ -27,17 +50,6 @@ impl RequestCounter {
     }
 }
 
-/// Returns the canary strings found in `haystack`. Used to prove prompts never
-/// reach persistent storage or logs (acceptance #12, #13).
-#[must_use]
-pub fn find_canaries<'a>(haystack: &[u8], canaries: &[&'a str]) -> Vec<&'a str> {
-    canaries
-        .iter()
-        .copied()
-        .filter(|c| !c.is_empty() && haystack.windows(c.len()).any(|w| w == c.as_bytes()))
-        .collect()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -49,14 +61,5 @@ mod tests {
         assert_eq!(c.count(), 0);
         c2.record();
         assert_eq!(c.count(), 1);
-    }
-
-    #[test]
-    fn canary_scan_finds_only_present_strings() {
-        let data = b"row: CANARY-123 end";
-        assert_eq!(
-            find_canaries(data, &["CANARY-123", "CANARY-999"]),
-            vec!["CANARY-123"]
-        );
     }
 }
