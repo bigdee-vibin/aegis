@@ -131,6 +131,14 @@ Not addressed: D10 (Rust workspace build on Windows GNU) is outside the design s
 | N5 | A warning banner says the unsaved edit was discarded when the review expires while editing | Banner text present |
 | N2 | Unknown or out-of-context `rv:` actions are ignored | Injected actions leave state unchanged |
 
+## 8. tool_call (P1) and malformed-message states, against contract_version 1.1
+- **tool_call:** `direction: 'tool_call'`, state `awaiting_tool_call_decision`, `tool_call{name, risk_class, arguments_preview}` and one `approvals.steps[kind: 'tool_call']` bound to `payload_sha256`. Decision sent: `approve_tool_call{payload_sha256}`. Banner: THIS TOOL CALL RUNS ONLY IF YOU APPROVE IT, then TOOL CALL WAS APPROVED AND RELEASED, or NOTHING WILL RUN. A confirm dialog with an acknowledgement checkbox precedes the decision (design choice for `explicit_confirm`).
+- **Design copy, not contract:** the one-line description per `risk_class` ("Runs a command on your device", ...), "Requested by the model, not typed by you" (derived from `trusted: false`), and "your agent app may run it one time". Needs confirmation by architecture/PM.
+- **Malformed messages (UI-local, AT-15):** every incoming snapshot is validated (JSON, `contract_version === 1`, required sections, known state, strictly increasing revision). A failing message is dropped, never rendered, and a notice lists the reason class and count only. A review that becomes unreadable after acceptance shows "This review cannot be shown safely" with a local Dismiss; all decision actions on it are refused.
+- **Prototype controls** (not product UI): Inject unreadable message, Inject stale revision, Inject unknown contract version, Corrupt selected review.
+- **Assumptions:** the notice's "restart Aegis" advice, and "Aegis rejects the request when it times out" (from `timeout.on_expiry: 'reject'`).
+- **Not done:** `risk_class: 'payment'` or other not-approvable tool calls (the layout supports `not_approvable` via "Nothing to approve" but no sample exists); real-time `inbound`/`response_blocked` interplay.
+
 ## 9. QA follow-ups N6-N8 (design/contract-v1.1)
 | ID | Fix | Evidence (scripted, mock daemon) |
 |---|---|---|
