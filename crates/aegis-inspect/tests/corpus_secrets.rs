@@ -66,11 +66,38 @@ fn has_credential_label(rec: &Value) -> bool {
 
 #[test]
 fn secret_pipeline_against_shared_corpora() {
-    let Ok(dir) = std::env::var("AEGIS_CORPORA_DIR") else {
-        println!("AEGIS_CORPORA_DIR not set: skipping corpus metrics");
-        return;
+    // If any gate variable is set this is a gate run: it must never skip or
+    // pass silently because the data is missing.
+    let gate_run = [
+        "AEGIS_MIN_PLAIN_RECALL",
+        "AEGIS_MIN_OBFUSCATION_RECALL",
+        "AEGIS_MAX_SECRET_FALSE_POSITIVES",
+    ]
+    .iter()
+    .any(|v| std::env::var(v).is_ok());
+    let dir = match std::env::var("AEGIS_CORPORA_DIR") {
+        Ok(d) => PathBuf::from(d),
+        Err(_) if gate_run => {
+            panic!("gate variables are set but AEGIS_CORPORA_DIR is not: refusing to skip")
+        }
+        Err(_) => {
+            println!("AEGIS_CORPORA_DIR not set: skipping corpus metrics");
+            return;
+        }
     };
-    let dir = PathBuf::from(dir);
+    // Cargo runs tests with cwd = the crate directory, so resolve relative
+    // paths from the workspace root (two levels up).
+    let dir = if dir.is_relative() {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .join(dir)
+    } else {
+        dir
+    };
+    assert!(
+        dir.is_dir(),
+        "AEGIS_CORPORA_DIR resolves to {dir:?}, which is not a directory: generate the corpora first"
+    );
     let scanner: Arc<dyn Detector> = Arc::new(SecretScanner::new().unwrap());
     let inspector = Inspector::new(vec![scanner]);
 
