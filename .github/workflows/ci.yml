@@ -50,3 +50,25 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: EmbarkStudios/cargo-deny-action@70f81531115945ba6eb6b941ec9d39d063438eb9 # v2
+
+  # Detection-quality gate (go-live gate G4). The corpora data is generated at
+  # run time (GitHub push protection blocks secret-shaped values in commits).
+  # Plain-form credential recall must stay at or above 99%; obfuscated recall is
+  # tracked separately with a no-regression floor (measured 103/123 = 83.7% on
+  # corpora v1.1.0); no false positives are allowed on the negative corpora.
+  # Record-level scoring; see crates/aegis-inspect/tests/corpus_secrets.rs.
+  corpus-gate:
+    name: detection corpus gate
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable branch
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+      - run: python3 -I tests/corpora/generate.py
+      - run: python3 -I tests/corpora/generate.py --check
+      - run: cargo test -p aegis-inspect --test corpus_secrets -- --nocapture
+        env:
+          AEGIS_CORPORA_DIR: tests/corpora/data
+          AEGIS_MIN_PLAIN_RECALL: "0.99"
+          AEGIS_MIN_OBFUSCATION_RECALL: "0.83"
+          AEGIS_MAX_SECRET_FALSE_POSITIVES: "0"
