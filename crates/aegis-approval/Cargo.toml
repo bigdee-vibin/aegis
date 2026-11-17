@@ -1,0 +1,15 @@
+[package]
+name = "aegis-approval"
+description = "Approval state machine (transform vs transmit, re-inspection) and unforgeable hash-bound outbound tokens."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+hmac = { workspace = true }
+sha2 = { workspace = true }
+
+[lints]
+workspace = true
