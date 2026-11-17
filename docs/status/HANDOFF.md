@@ -1,5 +1,7 @@
 # Aegis — Project Handoff (source of truth lives on GitHub)
 
+**Current build state for a resuming agent: see [BUILD-STATUS.md](BUILD-STATUS.md) (newer than this file).**
+
 **As of 2026-11-17.** All work sessions and local files may be deleted. This repo is the single source of truth. Everything below is verified from GitHub unless marked otherwise.
 
 ## Repo and PRs
