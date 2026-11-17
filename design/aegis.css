@@ -22,7 +22,7 @@
 :root{
   --r-sm:6px; --r-md:10px; --r-lg:14px;
   --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px;--s7:48px;
-  --font:Inter,"Geist",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font:system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"Geist Mono","JetBrains Mono",ui-monospace,"Cascadia Code",Consolas,monospace;
   --ease:cubic-bezier(.2,.8,.2,1);
 }

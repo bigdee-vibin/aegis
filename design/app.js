@@ -46,7 +46,7 @@ ${[['Mode',S.mode.replace('_',' '),'lock'],['Profile',S.profile,'layers'],['Loca
 <p class="t-sec">${pc?`${blockedCount()} blocked and ${pc-blockedCount()} awaiting your review. Nothing has been sent.`:'Nothing needs your attention.'}</p>
 <div class="row" style="margin-top:16px"><a class="btn primary" href="#review">Open Review Center</a><a class="btn" href="#inspector">Inspect last prompt</a></div></section></div>
 <div class="grid g2"><section class="card"><div class="card-h"><h2 class="t-section">Integration coverage</h2><a href="#integrations" class="t-sec">Manage</a></div><div class="list">
-${[['Chrome extension','ChatGPT, Claude (2 supported sites)','prot'],['OpenAI-compatible gateway','127.0.0.1:8742 · 2 app keys','prot'],['Other AI websites','Unsupported sites are not inspected','none'],['Ollama','Local runtime','prot']].map(([a,b,s])=>`<div class="li"><div class="grow"><div style="font-weight:550">${a}</div><div class="t-meta">${b}</div></div>${st(s)}</div>`).join('')}</div></section>
+${[['Chrome extension','ChatGPT, Claude (2 supported sites)','prot'],['OpenAI-compatible gateway','127.0.0.1:8731 · 2 app keys','prot'],['Other AI websites','Unsupported sites are not inspected','none'],['Ollama','Local runtime','prot']].map(([a,b,s])=>`<div class="li"><div class="grow"><div style="font-weight:550">${a}</div><div class="t-meta">${b}</div></div>${st(s)}</div>`).join('')}</div></section>
 <section class="card"><div class="card-h"><h2 class="t-section">Recent events</h2><a href="#analytics" class="t-sec">All activity</a></div><div class="list">
 ${[['crit','Secret blocked before sending','VS Code assistant · 4 min ago'],['high','Personal details need review','ChatGPT · 11 min ago'],['low','Inspection passed, no findings','Claude · 26 min ago'],['med','Response masked: internal hostname','Gateway · 1 h ago']].map(([s,a,b])=>`<div class="li">${sev(s)}<div class="grow"><div style="font-weight:550">${a}</div><div class="t-meta">${b}</div></div></div>`).join('')}</div></section></div>
 <div class="grid g2"><section class="card"><h2 class="t-section" style="margin-bottom:12px">Privacy activity today</h2><div class="grid g3" style="gap:12px">${[['Inspected','38'],['Transformed','5'],['Blocked','1']].map(([a,b])=>`<div class="pane"><div class="t-page">${b}</div><div class="t-meta">${a}</div></div>`).join('')}</div><p class="t-meta" style="margin-top:10px">Counts only. Prompt content is never stored.</p></section>
@@ -134,7 +134,7 @@ function integrations(){const lan=S.bind!='127.0.0.1';
  <section class="card"><div class="card-h"><h2 class="t-section">API gateway</h2>${lan?badge('warn','alert','LAN access on'):badge('ok','lock','Localhost only')}</div>
  <div class="grid g2"><div class="stack"><div class="field"><label for="bind">Bind address</label><select id="bind" class="select input mono" data-act="bind"><option value="127.0.0.1" ${!lan?'selected':''}>127.0.0.1 (default)</option><option value="0.0.0.0" ${lan?'selected':''}>0.0.0.0 (LAN, requires authentication)</option></select><span class="help">Network exposure never turns on silently.</span></div>
  ${lan?`<div class="alert warn">${ic('alert')}<div><div class="ttl">LAN access is enabled</div><p>Other devices on your network can reach this gateway. Every request must authenticate with an app key.</p></div></div>`:''}
- <div class="field"><span class="lbl">Endpoints (same policy engine)</span><code>http://${S.bind=='0.0.0.0'?'&lt;this-device&gt;':'127.0.0.1'}:8742/v1/responses</code><code>http://${S.bind=='0.0.0.0'?'&lt;this-device&gt;':'127.0.0.1'}:8742/v1/chat/completions</code></div></div>
+ <div class="field"><span class="lbl">Endpoints (same policy engine)</span><code>http://${S.bind=='0.0.0.0'?'&lt;this-device&gt;':'127.0.0.1'}:8731/v1/responses</code><code>http://${S.bind=='0.0.0.0'?'&lt;this-device&gt;':'127.0.0.1'}:8731/v1/chat/completions</code></div></div>
  <div class="stack"><div class="row between"><span class="lbl">App API keys</span><button class="btn sm" data-act="dlg:newkey">${ic('key')}New key</button></div><div class="list">${S.keys.map((k,i)=>`<div class="li"><div class="grow"><div style="font-weight:550">${k[0]}</div><div class="mono faint">${k[1]}</div><div class="t-meta">Last used ${k[2]}</div></div><button class="btn sm danger" data-act="dlg:revoke:${i}">Revoke</button></div>`).join('')||'<p class="t-sec">No keys.</p>'}</div><p class="t-meta">One key per application. Keys are shown once, then masked.</p></div></div></section>`}
 
 /* ---------- Settings ---------- */
@@ -155,6 +155,7 @@ function dialog(){const d=S.dlg;if(!d)return '';let body='';
  if(d=='why'){const r=S.reviews[S.sel];return wrap('Detailed explanation',`<div class="list">${r.why.map(w=>`<div class="li" style="align-items:flex-start"><b style="width:120px;flex:none;color:var(--text)">${w[0]}</b><span>${w[1]}</span></div>`).join('')}</div>`,`<button class="btn primary" data-act="closeDlg">Close</button>`)}
  if(d=='lan')return wrap('Enable LAN access?','Other devices on your network will be able to reach the Aegis gateway. Each request must carry an app key. Only enable this if you trust the network.',`<button class="btn" data-act="closeDlg">Keep localhost only</button><button class="btn warn" data-act="confirmLan">Enable LAN access</button>`);
  if(d.startsWith('revoke'))return wrap('Revoke this key?','Apps using it will stop working immediately. This cannot be undone; you would need to create a new key.',`<button class="btn" data-act="closeDlg">Cancel</button><button class="btn danger" data-act="confirmRevoke:${d.split(':')[1]}">Revoke key</button>`);
+ if(d=='keyshown')return wrap('Your new app key',`<p>This key is shown once. Copy it into your app now; Aegis keeps only a masked version.</p><div class="row" style="margin-top:12px"><code class="grow" id="nk">${S.newKey||''}</code><button class="btn" data-act="copyKey">${ic('file')}Copy key</button></div>`,`<button class="btn primary" data-act="closeDlg">I have copied it</button>`);
  if(d=='newkey')return wrap('Create app key',`<div class="field" style="margin-top:8px"><label for="kn">Application name</label><input id="kn" class="input" placeholder="e.g. Cursor"></div><p class="help" style="margin-top:8px">The key is shown once. Copy it into your app.</p>`,`<button class="btn" data-act="closeDlg">Cancel</button><button class="btn primary" data-act="addKey">Create key</button>`);
  if(d=='ctx')return wrap(`Activate “${S.prof}” → “${S.prof=='Coding'?'Personal':S.prof}”?`,`<p>Proposed changes before activation:</p><ul style="padding-left:18px;margin:8px 0"><li>Privacy strictness: ${PROF[S.prof][1]}</li><li>Sensitive handling: ${PROF[S.prof][3]}</li><li>Approvals: ${PROF[S.prof][5]}</li></ul>`,`<button class="btn" data-act="closeDlg">Not now</button><button class="btn primary" data-act="activate">Activate profile</button>`);
  if(d=='synthetic')return wrap('Synthetic protection test','Aegis will send a fake prompt containing a fake email and a fake key through the full path locally. Nothing is sent to any provider.',`<button class="btn" data-act="closeDlg">Cancel</button><button class="btn primary" data-act="synthRun">Run test</button>`);
@@ -163,10 +164,17 @@ function dialog(){const d=S.dlg;if(!d)return '';let body='';
 /* ---------- Router ---------- */
 const R={overview,review,inspector,profiles,router,analytics,integrations,settings};
 function render(){const route=(location.hash||'#overview').slice(1);const f=R[route]||(window.EXTRA&&window.EXTRA[route])||overview;const r=R[route]||window.EXTRA&&window.EXTRA[route]?route:'overview';
- const y=scrollY;$('#app').innerHTML=shell(f(),r);scrollTo(0,y);}
+ const ae=document.activeElement;const inDlg=!!(ae&&ae.closest&&ae.closest('.dialog'));const key=ae&&ae.dataset?ae.dataset.act:null;
+ const y=scrollY;$('#app').innerHTML=shell(f(),r);scrollTo(0,y);afterRender(inDlg,key)}
+function afterRender(inDlg,key){const dlg=document.querySelector('.dialog'),sh=document.querySelector('.shell');
+ if(dlg){sh&&sh.setAttribute('inert','');dlg.setAttribute('tabindex','-1');const t=inDlg&&key?dlg.querySelector('[data-act="'+key+'"]:not([disabled])'):null;(t||dlg.querySelector('input:not([disabled]),button:not([disabled])')||dlg).focus();S._wasDlg=true}
+ else if(S._wasDlg){S._wasDlg=false;const o=S.opener&&document.querySelector('[data-act="'+S.opener+'"]');const tgt=o||document.getElementById('content');tgt&&tgt.focus();S.opener=null}
+ else if(key){const t=document.querySelector('[data-act="'+key+'"]');t&&t.focus({preventScroll:true})}}
 addEventListener('hashchange',()=>{S.editing=false;S.dlg=null;render();scrollTo(0,0);$('#content')?.focus()});
 function toast(t){S.toasts.push(t);render();setTimeout(()=>{S.toasts.shift();render()},3200)}
-document.addEventListener('keydown',e=>{if(e.key=='Escape'&&S.dlg){S.dlg=null;render()}});
+document.addEventListener('keydown',e=>{
+ if(e.key=='Escape'&&S.dlg){S.dlg=null;S.ovAck=false;S.newKey=null;render();return}
+ if(e.key=='Tab'&&S.dlg){const d=document.querySelector('.dialog');if(!d)return;const f=[...d.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select,textarea,[tabindex]:not([tabindex="-1"])')];if(!f.length){e.preventDefault();return}const first=f[0],last=f[f.length-1];if(!d.contains(document.activeElement)){first.focus();e.preventDefault()}else if(e.shiftKey&&document.activeElement==first){last.focus();e.preventDefault()}else if(!e.shiftKey&&document.activeElement==last){first.focus();e.preventDefault()}}});
 document.addEventListener('change',e=>{const a=e.target.dataset.act;if(a=='bind'){if(e.target.value!='127.0.0.1'){S.dlg='lan'}else S.bind='127.0.0.1';render()}});
 document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el)return;const a=el.dataset.act;if(el.tagName=='SELECT')return;const [k,...p]=a.split(':');const v=p.join(':');const r=S.reviews[S.sel];
  const go=()=>render();
@@ -176,8 +184,8 @@ document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if
  if(k=='mode'){S.mode=v;return go()}
  if(k=='prof'){S.prof=v;return go()}
  if(k=='set'){S.setSec=v;return go()}
- if(k=='dlg'){S.dlg=v;return go()}
- if(k=='closeDlg'){if(e.target!==el&&el.classList.contains('scrim'))return;S.dlg=null;return go()}
+ if(k=='dlg'){S.opener=el.dataset.act;S.ovAck=false;S.dlg=v;return go()}
+ if(k=='closeDlg'){if(e.target!==el&&el.classList.contains('scrim'))return;S.dlg=null;S.ovAck=false;S.newKey=null;return go()}
  if(k=='ollama'){S.ollama=!S.ollama;return go()}
  if(k=='approveT'){r.stage=1;go();setTimeout(()=>{r.stage=2;go()},700);return}
  if(k=='edit'){S.editing=true;return go()}
@@ -187,11 +195,11 @@ document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if
  if(k=='undo'){r.stage=0;return go()}
  if(k=='confirmLan'){S.bind='0.0.0.0';S.dlg=null;return go()}
  if(k=='confirmRevoke'){if(v!='p')S.keys.splice(+v,1);S.dlg=null;go();return toast('Key revoked')}
- if(k=='addKey'){S.keys.push([($('#kn').value||'New app'),'aeg_k_••••••••'+Math.random().toString(36).slice(2,6),'never']);S.dlg=null;go();return toast('Key created. Copy it now: it will not be shown again.')}
+ if(k=='addKey'){const full='aeg_k_'+Math.random().toString(36).slice(2,10)+Math.random().toString(36).slice(2,10);S.keys.push([($('#kn').value||'New app'),'aeg_k_••••••••'+full.slice(-4),'never']);S.newKey=full;S.dlg='keyshown';return go()}
+ if(k=='copyKey'){(navigator.clipboard?navigator.clipboard.writeText(S.newKey):Promise.reject()).then(()=>toast('Key copied to clipboard'),()=>toast('Copy was blocked. Select the key and copy it manually.'));return}
  if(k=='activate'){S.profile=S.prof;S.dlg=null;go();return toast('Profile activated')}
  if(k=='synthRun'){S.dlg=null;go();return toast('Test passed: secret blocked, email transformed, nothing sent')}
  if(k=='toast')return toast(v);
  if(k=='sw'){const b=el;b.setAttribute('aria-checked',b.getAttribute('aria-checked')!='true');if(v=='lan'){S.dlg=b.getAttribute('aria-checked')=='true'?'lan':null;if(S.dlg)b.setAttribute('aria-checked','false');else S.bind='127.0.0.1';go()}return}
  if(window.EXTRA_ACT&&window.EXTRA_ACT(k,v,el))return;
 });
-render();

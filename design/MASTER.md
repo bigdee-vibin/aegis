@@ -103,3 +103,20 @@ Fix made during measurement: control borders originally used `--border-strong` (
 - 1024 and 768 px layouts were not measured numerically.
 - Reduced-motion and reduced-transparency rules exist in CSS but were not exercised in a browser.
 - Figma: none, this is a coded board.
+
+## 6. Tester report 1 defects (2026-11-17): fixes and regression evidence
+Regression checks were scripted in the browser against the fixed build (mock daemon, sample data). Result = observed.
+| ID | Fix | Evidence |
+|---|---|---|
+| D2 high | Terminal states render no send, override or approve control; daemon refuses decisions on closed reviews | Rejected R-2037: state `rejected`, 0 send controls; forced override click leaves state `rejected` |
+| D1 | Blocked items get a UI-local "Dismiss from queue"; removed the old diff code path | Dismiss R-2040: no error, selection moves to next item |
+| D3 | Acknowledgement reset on every dialog open, close, Esc and selection change | Tick, Esc, reopen: unticked and button disabled |
+| D4 | Approve transformation and Approve and send stay locked unless `proposal.reinspection.state` is `clean`/`not_needed`; mock daemon also refuses (`reinspection_failed`); stepper shows "Re-inspection failed" | Edit adding an email: both disabled, daemon refusal observed |
+| D5 | All approval controls disabled while the editor is open | Both disabled during edit |
+| D6 | Mock daemon confirms expiry even while editing and closes the editor; banner reads "TEXT IDENTICAL TO THE ORIGINAL WILL BE SENT, NO NET CHANGE" when proposed equals original; visible 4-step stepper | Expired while editing; identical-text banner |
+| D7 | On open, focus moves into the dialog and background is `inert`; Tab and Shift+Tab wrap; Esc closes; focus returns to the opener | Scripted keydown events; not tested with a screen reader |
+| B1 | Removed the premature render at script load | Overview renders, no console error |
+| D8 | New-key dialog shows the key once with a Copy button (clipboard); gateway port changed to 8731 (daemon default per tester; confirm) | Copy control present; no 8742 left |
+| D9 | Removed Google Fonts links; system font stack; no external requests | `performance` resource list contains no cross-origin entries; no horizontal overflow on any of the 15 screens at 1024 px (I could not identify the original 7 px element, so cannot say which change fixed it) |
+| README | States that `contrast.py` needs the CSS path | README updated |
+Not addressed: D10 (Rust workspace build on Windows GNU) is outside the design scope. B6 note (small muted text 3.8-4.4:1 by rough heuristic): the script measures `--text3` at 4.5:1 or better on card, bg and bg2; not re-measured on rendered pixels.
