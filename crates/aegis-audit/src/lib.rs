@@ -4,6 +4,7 @@
 //! is deliberately no string field, so prompt or response text cannot be
 //! recorded even by mistake. The JSON-lines sink is an M1 stand-in; the
 //! SQLCipher-backed store replaces it after spike S0.5, keeping this type.
+//! **Temporary:** AT-17 is not passed until that store exists.
 
 use aegis_core::{Action, Category, Finding, ReasonCode, Severity};
 use serde::{Deserialize, Serialize};
@@ -27,7 +28,7 @@ pub struct AuditEvent {
     pub ts_unix_ms: u64,
     /// Request identifier.
     pub request_id: u64,
-    /// Authenticated client registry id.
+    /// Authenticated client registry id; `0` when authentication failed.
     pub client_id: u32,
     /// API surface.
     pub endpoint: Endpoint,
@@ -77,6 +78,9 @@ impl std::fmt::Display for AuditError {
 impl std::error::Error for AuditError {}
 
 /// Destination for audit events.
+///
+/// `record` performs blocking I/O; async callers must run it on a blocking
+/// thread (the gateway does).
 pub trait AuditSink: Send + Sync {
     /// Durably record an event. Failure must make the caller fail closed.
     ///
@@ -110,19 +114,30 @@ impl AuditSink for MemoryAuditSink {
     }
 }
 
-/// Append-only JSON-lines file sink.
+/// Append-only JSON-lines file sink. Each record is flushed and `fsync`ed
+/// before `record` returns, so an acknowledged event survives a crash.
 #[derive(Debug)]
 pub struct JsonlFileSink {
     file: Mutex<File>,
 }
 
 impl JsonlFileSink {
-    /// Open (creating if needed) the audit file for appending.
+    /// Open (creating if needed) the audit file for appending. On Unix the file
+    /// is created with mode `0600`. On Windows it inherits the parent folder's
+    /// ACL: put the file in a per-user directory (ACL hardening is tracked with
+    /// the SQLCipher store).
     ///
     /// # Errors
     /// Returns the I/O error if the file cannot be opened.
     pub fn open(path: &Path) -> std::io::Result<Self> {
-        let file = OpenOptions::new().create(true).append(true).open(path)?;
+        let mut options = OpenOptions::new();
+        options.create(true).append(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            options.mode(0o600);
+        }
+        let file = options.open(path)?;
         Ok(Self {
             file: Mutex::new(file),
         })
@@ -135,7 +150,8 @@ impl AuditSink for JsonlFileSink {
         line.push(b'\n');
         let mut file = self.file.lock().map_err(|_| AuditError)?;
         file.write_all(&line).map_err(|_| AuditError)?;
-        file.flush().map_err(|_| AuditError)
+        file.flush().map_err(|_| AuditError)?;
+        file.sync_data().map_err(|_| AuditError)
     }
 }
 
@@ -172,15 +188,31 @@ mod tests {
     }
 
     #[test]
-    fn jsonl_round_trips() {
+    fn jsonl_round_trips_and_appends() {
         let dir = std::env::temp_dir().join(format!("aegis-audit-test-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("audit.jsonl");
         let sink = JsonlFileSink::open(&path).unwrap();
         sink.record(&event()).unwrap();
+        sink.record(&event()).unwrap();
         let text = std::fs::read_to_string(&path).unwrap();
-        let parsed: AuditEvent = serde_json::from_str(text.trim()).unwrap();
+        let lines: Vec<&str> = text.lines().collect();
+        assert_eq!(lines.len(), 2);
+        let parsed: AuditEvent = serde_json::from_str(lines[0]).unwrap();
         assert_eq!(parsed, event());
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn jsonl_file_is_owner_only_on_unix() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = std::env::temp_dir().join(format!("aegis-audit-perm-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("audit.jsonl");
+        let _sink = JsonlFileSink::open(&path).unwrap();
+        let mode = std::fs::metadata(&path).unwrap().permissions().mode() & 0o777;
+        assert_eq!(mode, 0o600);
         std::fs::remove_dir_all(&dir).unwrap();
     }
 

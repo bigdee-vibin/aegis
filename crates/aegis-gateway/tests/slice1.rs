@@ -179,6 +179,15 @@ async fn secrets_are_found_wherever_they_hide() {
             StatusCode::FORBIDDEN,
             "case {i} was not blocked: {resp}"
         );
+        assert_eq!(
+            code(&resp),
+            "critical_secret",
+            "case {i} blocked for the wrong reason: {resp}"
+        );
+        assert_eq!(
+            resp["error"]["aegis"]["reasons"][0], "critical_secret",
+            "case {i} reason code missing"
+        );
         assert_eq!(h.upstream_calls.count(), 0, "case {i} leaked upstream");
     }
 }
@@ -218,6 +227,7 @@ async fn oversize_body_is_rejected() {
         memory,
         Limits {
             max_body_bytes: 1024,
+            ..Limits::default()
         },
     );
     let (status, resp) = post(&h, chat(&"a".repeat(4096))).await;

@@ -1,9 +1,10 @@
 //! Local OpenAI-compatible gateway (stories S1.2, S1.8).
 //!
 //! Pipeline for `POST /v1/chat/completions`:
-//! authenticate → size limit → parse → validate → inspect → policy →
-//! audit → (only if allowed) upstream. Every failure before the upstream call
-//! ends the request; nothing is forwarded on an inspection failure.
+//! authenticate (throttled) → concurrency limit → size limit and read timeout →
+//! parse → validate → inspect (time-limited, fail closed) → policy → audit →
+//! (only if allowed) upstream. Every failure before the upstream call ends the
+//! request; nothing is forwarded on an inspection failure.
 
 // `GatewayError` is large because it carries findings for the error body; it is
 // created at most once per request, so boxing it would only add noise.
@@ -14,14 +15,16 @@ mod error;
 mod upstream;
 mod validate;
 
-pub use auth::ClientRegistry;
+pub use auth::{
+    key_is_strong, AuthOutcome, ClientRegistry, FAILURE_WINDOW, MAX_FAILURES_PER_WINDOW,
+};
 pub use error::GatewayError;
 pub use upstream::{NoUpstream, Upstream, UpstreamError, UpstreamFuture};
 pub use validate::{validate_chat, ValidationError};
 
 use aegis_audit::{category_counts, max_severity, AuditEvent, AuditSink, Endpoint};
-use aegis_core::{Action, ReasonCode};
-use aegis_inspect::Inspector;
+use aegis_core::{Action, Finding, ReasonCode};
+use aegis_inspect::{InspectionReport, Inspector};
 use aegis_policy::{decide, PolicyInput};
 use axum::body::Body;
 use axum::extract::State;
@@ -32,19 +35,29 @@ use axum::{Json, Router};
 use serde_json::{json, Value};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use tokio::sync::Semaphore;
 
 /// Request limits.
 #[derive(Debug, Clone, Copy)]
 pub struct Limits {
     /// Maximum request body size in bytes.
     pub max_body_bytes: usize,
+    /// Maximum time to receive the full body.
+    pub body_timeout: Duration,
+    /// Maximum time for inspection; exceeding it fails closed.
+    pub inspect_timeout: Duration,
+    /// Maximum requests processed concurrently.
+    pub max_concurrent: usize,
 }
 
 impl Default for Limits {
     fn default() -> Self {
         Self {
             max_body_bytes: 1024 * 1024,
+            body_timeout: Duration::from_secs(15),
+            inspect_timeout: Duration::from_secs(5),
+            max_concurrent: 32,
         }
     }
 }
@@ -56,6 +69,7 @@ pub struct GatewayState {
     audit: Arc<dyn AuditSink>,
     upstream: Arc<dyn Upstream>,
     limits: Limits,
+    permits: Arc<Semaphore>,
     counter: AtomicU64,
 }
 
@@ -75,6 +89,7 @@ impl GatewayState {
             audit,
             upstream,
             limits,
+            permits: Arc::new(Semaphore::new(limits.max_concurrent.max(1))),
             counter: AtomicU64::new(0),
         }
     }
@@ -83,6 +98,15 @@ impl GatewayState {
         let ms = unix_ms();
         let n = self.counter.fetch_add(1, Ordering::Relaxed);
         (ms << 20) | (n & 0xF_FFFF)
+    }
+
+    /// Write an audit event on a blocking thread (the sink does file I/O).
+    async fn audit(&self, event: AuditEvent) -> Result<(), ()> {
+        let sink = self.audit.clone();
+        match tokio::task::spawn_blocking(move || sink.record(&event)).await {
+            Ok(Ok(())) => Ok(()),
+            _ => Err(()),
+        }
     }
 }
 
@@ -114,87 +138,174 @@ async fn chat_completions(
         .unwrap_or_else(IntoResponse::into_response)
 }
 
-async fn handle_chat(
-    state: &GatewayState,
-    headers: &HeaderMap,
-    body: Body,
-) -> Result<Response, GatewayError> {
-    let started = Instant::now();
-    let client_id = state
-        .clients
-        .authenticate(headers)
-        .ok_or_else(GatewayError::unauthorized)?;
-    let request_id = state.next_request_id();
+struct Ctx<'a> {
+    state: &'a GatewayState,
+    request_id: u64,
+    client_id: u32,
+    started: Instant,
+    input_bytes: u64,
+}
 
-    let bytes = axum::body::to_bytes(body, state.limits.max_body_bytes)
-        .await
-        .map_err(|_| GatewayError::payload_too_large().with_request(request_id))?;
-    let input_bytes = bytes.len() as u64;
-    let value: Value = serde_json::from_slice(&bytes)
-        .map_err(|_| GatewayError::invalid("Body is not valid JSON.").with_request(request_id))?;
-
-    let record = |action: Action,
-                  reasons: &[ReasonCode],
-                  findings: &[aegis_core::Finding],
-                  forwarded: bool|
-     -> Result<(), GatewayError> {
+impl Ctx<'_> {
+    async fn record(
+        &self,
+        action: Action,
+        reasons: &[ReasonCode],
+        findings: &[Finding],
+        forwarded: bool,
+    ) -> Result<(), GatewayError> {
         let event = AuditEvent {
             ts_unix_ms: unix_ms(),
-            request_id,
-            client_id,
+            request_id: self.request_id,
+            client_id: self.client_id,
             endpoint: Endpoint::ChatCompletions,
             action,
             reasons: reasons.to_vec(),
             category_counts: category_counts(findings),
             max_severity: max_severity(findings),
-            input_bytes,
+            input_bytes: self.input_bytes,
             forwarded,
-            latency_ms: u32::try_from(started.elapsed().as_millis()).unwrap_or(u32::MAX),
+            latency_ms: u32::try_from(self.started.elapsed().as_millis()).unwrap_or(u32::MAX),
         };
-        state.audit.record(&event).map_err(|_| {
+        self.state.audit(event).await.map_err(|()| {
             GatewayError::new(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "aegis_error",
                 "audit_failed",
                 "Request not processed: the audit record could not be written.",
             )
-            .with_request(request_id)
+            .with_request(self.request_id)
         })
+    }
+
+    /// Audit a request rejected before inspection, then return its error. If
+    /// the audit write itself fails the request is still rejected.
+    async fn reject(&self, reason: ReasonCode, error: GatewayError) -> GatewayError {
+        let _ = self.record(Action::Block, &[reason], &[], false).await;
+        error
+            .with_request(self.request_id)
+            .with_reasons(vec![reason])
+    }
+}
+
+async fn handle_chat(
+    state: &GatewayState,
+    headers: &HeaderMap,
+    body: Body,
+) -> Result<Response, GatewayError> {
+    let started = Instant::now();
+    let request_id = state.next_request_id();
+    let mut ctx = Ctx {
+        state,
+        request_id,
+        client_id: 0,
+        started,
+        input_bytes: 0,
+    };
+
+    match state.clients.authenticate(headers) {
+        AuthOutcome::Client(id) => ctx.client_id = id,
+        AuthOutcome::Denied => {
+            return Err(ctx
+                .reject(ReasonCode::AuthFailed, GatewayError::unauthorized())
+                .await);
+        }
+        // Throttled attempts are neither processed nor audited: the audit log
+        // must not become the next thing an attacker can flood.
+        AuthOutcome::Throttled => return Err(GatewayError::rate_limited()),
+    }
+
+    let Ok(_permit) = state.permits.clone().try_acquire_owned() else {
+        return Err(GatewayError::overloaded().with_request(request_id));
+    };
+
+    let read = tokio::time::timeout(
+        state.limits.body_timeout,
+        axum::body::to_bytes(body, state.limits.max_body_bytes),
+    )
+    .await;
+    let bytes = match read {
+        Ok(Ok(b)) => b,
+        Ok(Err(_)) => {
+            return Err(ctx
+                .reject(
+                    ReasonCode::PayloadTooLarge,
+                    GatewayError::payload_too_large(),
+                )
+                .await);
+        }
+        Err(_) => {
+            return Err(ctx
+                .reject(
+                    ReasonCode::InvalidRequest,
+                    GatewayError::new(
+                        StatusCode::REQUEST_TIMEOUT,
+                        "invalid_request_error",
+                        "request_timeout",
+                        "The request body was not received in time.",
+                    ),
+                )
+                .await);
+        }
+    };
+    ctx.input_bytes = bytes.len() as u64;
+
+    let Ok(value) = serde_json::from_slice::<Value>(&bytes) else {
+        return Err(ctx
+            .reject(
+                ReasonCode::InvalidRequest,
+                GatewayError::invalid("Body is not valid JSON."),
+            )
+            .await);
     };
 
     let strings = match validate_chat(&value) {
         Ok(s) => s,
         Err(ValidationError::Invalid(msg)) => {
-            return Err(GatewayError::invalid(msg).with_request(request_id));
+            return Err(ctx
+                .reject(ReasonCode::InvalidRequest, GatewayError::invalid(msg))
+                .await);
         }
         Err(ValidationError::UnsupportedParam(param)) => {
-            let reasons = [ReasonCode::UnsupportedParameter];
-            record(Action::Block, &reasons, &[], false)?;
-            return Err(GatewayError::new(
-                StatusCode::BAD_REQUEST,
-                "invalid_request_error",
-                "unsupported_parameter",
-                "This parameter is not supported by this Aegis build.",
-            )
-            .with_param(param)
-            .with_request(request_id)
-            .with_reasons(reasons.to_vec()));
+            return Err(ctx
+                .reject(
+                    ReasonCode::UnsupportedParameter,
+                    GatewayError::new(
+                        StatusCode::BAD_REQUEST,
+                        "invalid_request_error",
+                        "unsupported_parameter",
+                        "This parameter is not supported by this Aegis build.",
+                    )
+                    .with_param(param),
+                )
+                .await);
         }
         Err(ValidationError::UnsupportedContent) => {
-            let reasons = [ReasonCode::UnsupportedContent];
-            record(Action::Block, &reasons, &[], false)?;
-            return Err(GatewayError::new(
-                StatusCode::BAD_REQUEST,
-                "aegis_blocked",
-                "unsupported_content",
-                "Request contains content Aegis cannot inspect (text only in this version).",
-            )
-            .with_request(request_id)
-            .with_reasons(reasons.to_vec()));
+            return Err(ctx
+                .reject(
+                    ReasonCode::UnsupportedContent,
+                    GatewayError::new(
+                        StatusCode::BAD_REQUEST,
+                        "aegis_blocked",
+                        "unsupported_content",
+                        "Request contains content Aegis cannot inspect (text only in this version).",
+                    ),
+                )
+                .await);
         }
     };
 
-    let report = state.inspector.inspect(&strings);
+    // Inspection is CPU-bound and must not stall the runtime, and must not be
+    // able to run forever: a timeout or a panic is an inspection failure.
+    let inspector = state.inspector.clone();
+    let task = tokio::task::spawn_blocking(move || inspector.inspect(&strings));
+    let report = match tokio::time::timeout(state.limits.inspect_timeout, task).await {
+        Ok(Ok(report)) => report,
+        Ok(Err(_)) | Err(_) => InspectionReport {
+            findings: Vec::new(),
+            stage1_failed: true,
+        },
+    };
     let decision = decide(&PolicyInput {
         findings: &report.findings,
         stage1_failed: report.stage1_failed,
@@ -203,10 +314,12 @@ async fn handle_chat(
     match decision.action {
         Action::Allow | Action::Notify => {
             // Record before releasing: if the audit write fails, nothing leaves.
-            record(decision.action, &decision.reasons, &report.findings, true)?;
+            ctx.record(decision.action, &decision.reasons, &report.findings, true)
+                .await?;
         }
         Action::Review | Action::Block => {
-            record(decision.action, &decision.reasons, &report.findings, false)?;
+            ctx.record(decision.action, &decision.reasons, &report.findings, false)
+                .await?;
             let (status, kind, code, message) =
                 if decision.reasons.contains(&ReasonCode::InspectionFailed) {
                     (

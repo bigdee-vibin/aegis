@@ -8,8 +8,9 @@ use std::sync::Arc;
 pub struct InspectionReport {
     /// All findings, with `span.part_index` set to the originating part.
     pub findings: Vec<Finding>,
-    /// A mandatory detector failed, panicked, or none were configured.
-    /// Callers must fail closed (invariant I9).
+    /// A mandatory detector failed, panicked, none were configured, or decoding
+    /// was truncated so part of the content was not inspected. Callers must
+    /// fail closed (invariant I9).
     pub stage1_failed: bool,
 }
 
@@ -26,8 +27,9 @@ impl Inspector {
         Self { detectors }
     }
 
-    /// Inspect every part. A detector error or panic marks the report failed;
-    /// an inspector with no detectors is always failed (nothing was inspected).
+    /// Inspect every part. A detector error or panic, or truncated decoding,
+    /// marks the report failed; an inspector with no detectors is always
+    /// failed (nothing was inspected).
     #[must_use]
     pub fn inspect<S: AsRef<str>>(&self, parts: &[S]) -> InspectionReport {
         let mut report = InspectionReport {
@@ -36,11 +38,14 @@ impl Inspector {
         };
         for (index, part) in parts.iter().enumerate() {
             let part = part.as_ref();
-            let Ok(Some(text_views)) = catch_unwind(AssertUnwindSafe(|| views(part))) else {
+            let Ok(Some(set)) = catch_unwind(AssertUnwindSafe(|| views(part))) else {
                 report.stage1_failed = true;
                 continue;
             };
-            for view in &text_views {
+            if set.truncated {
+                report.stage1_failed = true;
+            }
+            for view in &set.views {
                 for detector in &self.detectors {
                     match catch_unwind(AssertUnwindSafe(|| detector.scan(view))) {
                         Ok(DetectorOutcome::Ok(mut found)) => {
@@ -63,6 +68,7 @@ impl Inspector {
 mod tests {
     use super::*;
     use aegis_core::{Category, FailureCode, Severity, Span};
+    use base64::Engine;
 
     struct Always;
     impl Detector for Always {
@@ -130,5 +136,16 @@ mod tests {
     #[test]
     fn no_detectors_means_not_inspected() {
         assert!(Inspector::new(vec![]).inspect(&["anything"]).stage1_failed);
+    }
+
+    #[test]
+    fn truncated_decoding_fails_closed() {
+        // Regression for security review finding 1.
+        let engine = base64::engine::general_purpose::STANDARD;
+        let decoys: Vec<String> = (0..90)
+            .map(|i| engine.encode(format!("decoy payload number {i:04} padding text")))
+            .collect();
+        let r = Inspector::new(vec![Arc::new(Always)]).inspect(&[decoys.join(" ")]);
+        assert!(r.stage1_failed);
     }
 }

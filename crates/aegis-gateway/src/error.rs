@@ -48,6 +48,24 @@ impl GatewayError {
         )
     }
 
+    pub(crate) fn rate_limited() -> Self {
+        Self::new(
+            StatusCode::TOO_MANY_REQUESTS,
+            "rate_limit_error",
+            "rate_limited",
+            "Too many failed attempts. Try again later.",
+        )
+    }
+
+    pub(crate) fn overloaded() -> Self {
+        Self::new(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "aegis_error",
+            "overloaded",
+            "Aegis is at its concurrency limit. Try again shortly.",
+        )
+    }
+
     pub(crate) fn payload_too_large() -> Self {
         Self::new(
             StatusCode::PAYLOAD_TOO_LARGE,

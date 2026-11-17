@@ -28,7 +28,7 @@ unicode-normalization = "0.1"
 sha2 = "0.10"
 subtle = "2"
 axum = "0.8"
-tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "signal", "io-util"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "signal", "io-util", "sync", "time"] }
 tower = { version = "0.5", features = ["util"] }
 aegis-core = { path = "crates/aegis-core" }
 aegis-policy = { path = "crates/aegis-policy" }

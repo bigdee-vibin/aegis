@@ -16,6 +16,12 @@ pub enum ReasonCode {
     UnsupportedContent,
     /// The request used a parameter this build does not support.
     UnsupportedParameter,
+    /// Authentication failed (no key material is ever recorded).
+    AuthFailed,
+    /// The request body exceeded the size limit.
+    PayloadTooLarge,
+    /// The request was malformed.
+    InvalidRequest,
 }
 
 impl ReasonCode {
@@ -29,6 +35,9 @@ impl ReasonCode {
             Self::InspectionFailed => "inspection_failed",
             Self::UnsupportedContent => "unsupported_content",
             Self::UnsupportedParameter => "unsupported_parameter",
+            Self::AuthFailed => "auth_failed",
+            Self::PayloadTooLarge => "payload_too_large",
+            Self::InvalidRequest => "invalid_request",
         }
     }
 }

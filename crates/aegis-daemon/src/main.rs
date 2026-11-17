@@ -10,7 +10,7 @@
 
 use aegis_audit::JsonlFileSink;
 use aegis_detect_secrets::SecretScanner;
-use aegis_gateway::{router, ClientRegistry, GatewayState, Limits, NoUpstream};
+use aegis_gateway::{key_is_strong, router, ClientRegistry, GatewayState, Limits, NoUpstream};
 use aegis_inspect::Inspector;
 use std::net::SocketAddr;
 use std::path::PathBuf;
@@ -35,8 +35,10 @@ async fn main() -> ExitCode {
     let Ok(api_key) = std::env::var("AEGIS_API_KEY") else {
         return fail("AEGIS_API_KEY is required");
     };
-    if api_key.len() < 16 {
-        return fail("AEGIS_API_KEY must be at least 16 characters");
+    if !key_is_strong(&api_key) {
+        return fail(
+            "AEGIS_API_KEY must be at least 32 characters with at least 12 distinct characters",
+        );
     }
     let Ok(audit_path) = std::env::var("AEGIS_AUDIT_PATH") else {
         return fail("AEGIS_AUDIT_PATH is required");
