@@ -67,8 +67,10 @@ name = "aegis-inspect"
 version = "0.0.1"
 dependencies = [
  "aegis-core",
+ "aegis-detect-secrets",
  "base64",
  "regex",
+ "serde_json",
  "unicode-normalization",
 ]
 

@@ -6,13 +6,13 @@
 
 | Branch (origin) | What it holds | Status |
 |---|---|---|
-| `main` (9b6b879) | M0 scaffold, M1 gateway slice, security-review fixes, design/QA/PRD docs | CI green on windows-latest, ubuntu-22.04, macos-latest, msrv 1.90, cargo-deny, no-outbound-sockets (reported by PM, unpinned deps) |
-| `pr/approval-engine` (08e0b95) | `aegis-approval`: Review state machine + HMAC hash-bound single-use tokens | Pushed once; CI result not yet reported. Not wired into gateway/egress |
+| `main` (f75d7f2 at last check; 9b6b879 was the M1 merge) | M0 scaffold, M1 gateway slice, security-review fixes, design/QA/PRD docs | CI green on windows-latest, ubuntu-22.04, macos-latest, msrv 1.90, cargo-deny, no-outbound-sockets (reported by PM, unpinned deps) |
+| `pr/approval-engine` (08e0b95) | `aegis-approval`: Review state machine + HMAC hash-bound single-use tokens | CI green (reported by PM). Not wired into gateway/egress |
 | `docs-architect-sync` | S0.3 testkit, S2.1 PII detectors, AT-19 row, S3.6a, contract v1.1 (ADR-0023), `architect-status.md` | Built on the OLD m0-m1 history: **must be rebased onto origin/main** (conflicts expected in `Cargo.toml` tokio features and docs) |
 | `s2-1-pii-detectors`, `s0-3-testkit` | the same commits individually | superseded by the rebase above |
 | `fix/secret-recall` (this branch) | provider-format rules, placeholder filtering, spaced/line-wrapped recovery, corpus metrics test | see section 3 |
 
-Earlier branches `s2-3-approval-engine`, `s2-1b-corpus-metrics`, `m0-m1-scaffold`, `fix/m1-security-review` are obsolete or merged; do not push to them.
+Earlier branches `s2-3-approval-engine`, `m0-m1-scaffold`, `fix/m1-security-review` are obsolete or merged; do not push to them. `s2-1b-corpus-metrics` failed CI because its `Cargo.lock` was not updated after adding dev-dependencies (the msrv job uses `--locked`); its content is now in `fix/secret-recall` with the lock fixed. **Always run `cargo metadata --locked` after changing any `Cargo.toml` and commit `Cargo.lock`.** The canonical resume file is `docs/status/BUILD-STATUS.md` on main; keep this note consistent with it.
 
 ## 2. Building locally on this Windows machine
 
