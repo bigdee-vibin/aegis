@@ -1,6 +1,6 @@
 [package]
 name = "aegis-daemon"
-description = "Aegis Core daemon: composition root. Skeleton in M0."
+description = "Aegis Core daemon: composition root."
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -8,6 +8,12 @@ rust-version.workspace = true
 publish.workspace = true
 
 [dependencies]
+aegis-audit = { workspace = true }
+aegis-detect-secrets = { workspace = true }
+aegis-gateway = { workspace = true }
+aegis-inspect = { workspace = true }
+axum = { workspace = true }
+tokio = { workspace = true }
 
 [lints]
 workspace = true

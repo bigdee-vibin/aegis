@@ -22,6 +22,53 @@ pub enum Category {
     Defence,
 }
 
+impl Category {
+    /// Number of categories.
+    pub const COUNT: usize = 8;
+
+    /// All categories in stable index order (used by fixed-size audit counters).
+    pub const ALL: [Category; Category::COUNT] = [
+        Category::Identity,
+        Category::CredentialSecret,
+        Category::Financial,
+        Category::Confidential,
+        Category::Technical,
+        Category::PersonalRecord,
+        Category::ContextualIdentity,
+        Category::Defence,
+    ];
+
+    /// Stable index in `0..COUNT`.
+    #[must_use]
+    pub fn index(self) -> usize {
+        match self {
+            Self::Identity => 0,
+            Self::CredentialSecret => 1,
+            Self::Financial => 2,
+            Self::Confidential => 3,
+            Self::Technical => 4,
+            Self::PersonalRecord => 5,
+            Self::ContextualIdentity => 6,
+            Self::Defence => 7,
+        }
+    }
+
+    /// Stable machine-readable name.
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Identity => "identity",
+            Self::CredentialSecret => "credential_secret",
+            Self::Financial => "financial",
+            Self::Confidential => "confidential",
+            Self::Technical => "technical",
+            Self::PersonalRecord => "personal_record",
+            Self::ContextualIdentity => "contextual_identity",
+            Self::Defence => "defence",
+        }
+    }
+}
+
 /// Finding severity, ordered `Info < Low < Medium < High < Critical`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]

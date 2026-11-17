@@ -1,27 +1,31 @@
 //! Deterministic policy engine v0 (ADR-0005, ADR-0017).
 //!
 //! `decide` is pure: same input, same output; no I/O, AI, clock or randomness.
-//! v0 implements only the mandatory critical-secret block and a severity
-//! mapping. Profiles, approvals and coverage handling arrive in M2.
+//! v0 implements the mandatory critical-secret block, fail-closed handling of
+//! incomplete inspection, and a severity mapping. Profiles and approvals
+//! arrive in M2.
 
+pub use aegis_core::ReasonCode;
 use aegis_core::{Action, Category, Finding, Severity};
 
-/// Machine-readable reason for a decision. Never contains matched text.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ReasonCode {
-    /// A critical credential/secret was found (mandatory block, not approvable).
-    CriticalSecret,
-    /// A finding at or above medium severity requires review.
-    ReviewRequired,
-    /// A low-severity finding: proceed with a notice.
-    NoticeOnly,
-}
-
 /// Input to [`decide`].
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct PolicyInput<'a> {
     /// Findings from all detectors, already merged.
     pub findings: &'a [Finding],
+    /// Mandatory (stage 1) inspection failed or was incomplete: fail closed.
+    pub stage1_failed: bool,
+}
+
+impl<'a> PolicyInput<'a> {
+    /// Input with the given findings and complete inspection.
+    #[must_use]
+    pub fn from_findings(findings: &'a [Finding]) -> Self {
+        Self {
+            findings,
+            stage1_failed: false,
+        }
+    }
 }
 
 /// Result of [`decide`].
@@ -51,6 +55,10 @@ fn classify(finding: &Finding) -> (Action, Option<ReasonCode>) {
 pub fn decide(input: &PolicyInput<'_>) -> Decision {
     let mut action = Action::Allow;
     let mut reasons = Vec::new();
+    if input.stage1_failed {
+        action = Action::Block;
+        reasons.push(ReasonCode::InspectionFailed);
+    }
     for finding in input.findings {
         let (a, reason) = classify(finding);
         action = action.combine(a);
@@ -68,16 +76,6 @@ mod tests {
     use super::*;
     use aegis_core::Span;
 
-    const CATEGORIES: [Category; 8] = [
-        Category::Identity,
-        Category::CredentialSecret,
-        Category::Financial,
-        Category::Confidential,
-        Category::Technical,
-        Category::PersonalRecord,
-        Category::ContextualIdentity,
-        Category::Defence,
-    ];
     const SEVERITIES: [Severity; 5] = [
         Severity::Info,
         Severity::Low,
@@ -103,7 +101,7 @@ mod tests {
     }
 
     fn all_findings() -> Vec<Finding> {
-        CATEGORIES
+        Category::ALL
             .iter()
             .flat_map(|c| SEVERITIES.iter().map(|s| finding(*c, *s)))
             .collect()
@@ -111,7 +109,7 @@ mod tests {
 
     #[test]
     fn no_findings_allows() {
-        let d = decide(&PolicyInput { findings: &[] });
+        let d = decide(&PolicyInput::from_findings(&[]));
         assert_eq!(d.action, Action::Allow);
         assert!(d.reasons.is_empty());
     }
@@ -119,7 +117,7 @@ mod tests {
     #[test]
     fn critical_secret_blocks() {
         let f = [finding(Category::CredentialSecret, Severity::Critical)];
-        let d = decide(&PolicyInput { findings: &f });
+        let d = decide(&PolicyInput::from_findings(&f));
         assert_eq!(d.action, Action::Block);
         assert_eq!(d.reasons, vec![ReasonCode::CriticalSecret]);
     }
@@ -127,13 +125,29 @@ mod tests {
     #[test]
     fn non_secret_critical_requires_review_not_block() {
         let f = [finding(Category::Identity, Severity::Critical)];
-        assert_eq!(decide(&PolicyInput { findings: &f }).action, Action::Review);
+        assert_eq!(
+            decide(&PolicyInput::from_findings(&f)).action,
+            Action::Review
+        );
     }
 
     #[test]
     fn defence_subject_alone_is_not_elevated() {
         let f = [finding(Category::Defence, Severity::Info)];
-        assert_eq!(decide(&PolicyInput { findings: &f }).action, Action::Allow);
+        assert_eq!(
+            decide(&PolicyInput::from_findings(&f)).action,
+            Action::Allow
+        );
+    }
+
+    #[test]
+    fn incomplete_inspection_blocks_even_with_no_findings() {
+        let d = decide(&PolicyInput {
+            findings: &[],
+            stage1_failed: true,
+        });
+        assert_eq!(d.action, Action::Block);
+        assert_eq!(d.reasons, vec![ReasonCode::InspectionFailed]);
     }
 
     /// Monotonicity (ADR-0005): adding any finding never lowers the action,
@@ -142,16 +156,16 @@ mod tests {
     fn adding_a_finding_never_lowers_action() {
         let all = all_findings();
         for a in &all {
-            let base = decide(&PolicyInput {
-                findings: std::slice::from_ref(a),
-            })
-            .action;
+            let base = decide(&PolicyInput::from_findings(std::slice::from_ref(a))).action;
             for b in &all {
                 let pair = [a.clone(), b.clone()];
                 let swapped = [b.clone(), a.clone()];
-                let combined = decide(&PolicyInput { findings: &pair }).action;
+                let combined = decide(&PolicyInput::from_findings(&pair)).action;
                 assert!(combined >= base);
-                assert_eq!(combined, decide(&PolicyInput { findings: &swapped }).action);
+                assert_eq!(
+                    combined,
+                    decide(&PolicyInput::from_findings(&swapped)).action
+                );
             }
         }
     }
@@ -159,9 +173,9 @@ mod tests {
     #[test]
     fn decide_is_deterministic() {
         let all = all_findings();
-        let first = decide(&PolicyInput { findings: &all });
+        let first = decide(&PolicyInput::from_findings(&all));
         for _ in 0..10 {
-            assert_eq!(first, decide(&PolicyInput { findings: &all }));
+            assert_eq!(first, decide(&PolicyInput::from_findings(&all)));
         }
     }
 }
